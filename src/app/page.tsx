@@ -1,4 +1,6 @@
 import ButtonGoogle from "@/components/button-google";
+import ButtonLogin from "@/components/button-login";
+import ButtonRegister from "@/components/button-register";
 
 export default function Home() {
   return (
@@ -32,15 +34,11 @@ export default function Home() {
                 <div className="px-4 py-4">hoặc</div>
                 <div className="h-[1px] w-full bg-slate-400"></div>
               </div>
-              <button className="text-center rounded-full bg-blue-500 font-bold text-white  px-4 py-2 text-base h-16 w-full shadow-sm border border-slate-400 hover:bg-blue-600">
-                Tạo tài khoản
-              </button>
+              <ButtonRegister />
             </div>
             <div className="mt-10">
               <span className="font-bold text-lg">Đã có tài khoản?</span>
-              <button className="mt-5 text-center rounded-full bg-white font-bold text-blue-600 px-4 py-2 text-base h-16 w-full shadow-sm border border-slate-400 hover:bg-gray-50">
-                Đăng nhập
-              </button>
+              <ButtonLogin />
             </div>
           </div>
         </div>
