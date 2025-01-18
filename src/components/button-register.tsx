@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -11,156 +10,255 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import DatePicker from "./DatePicker";
+import { toast } from "@/hooks/use-toast";
 
-interface DateChangeHandler {
-  (type: string, value: string): void;
-}
+// Define validation schema
+const formSchema = z
+  .object({
+    name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
+    email: z.string().email("Email không hợp lệ"),
+    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    confirm_password: z.string(),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: "Mật khẩu không khớp",
+    path: ["confirm_password"],
+  });
 
-const formSchema = z.object({
-  username: z.string().min(2).max(50),
-  email: z.string().min(2).max(50),
-  password: z.string().min(2).max(50),
-  confirmPassword: z.string().min(2).max(50),
-});
+type FormData = z.infer<typeof formSchema>;
 
 export default function ButtonRegister() {
-  const [isFormRegister, setisFormRegister] = useState(false);
+  const [isFormRegister, setIsFormRegister] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState({
+    day: "",
+    month: "",
+    year: "",
+  });
 
-  const handleDateChange: DateChangeHandler = (type, value) => {
-    console.log(`${type}: ${value}`);
-    // Xử lý logic khi ngày tháng năm thay đổi
-  };
-  // 1. Define your form.
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      name: "",
       email: "",
       password: "",
-      confirmPassword: "",
+      confirm_password: "",
     },
   });
 
-  // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
-  }
+  const handleDateChange = (type: string, value: string) => {
+    setDateOfBirth((prev) => ({
+      ...prev,
+      [type.toLowerCase()]: value,
+    }));
+  };
+
+  const validateDateOfBirth = () => {
+    if (!dateOfBirth.day || !dateOfBirth.month || !dateOfBirth.year) {
+      throw new Error("Vui lòng chọn ngày sinh");
+    }
+
+    const date = new Date(
+      parseInt(dateOfBirth.year),
+      parseInt(dateOfBirth.month) - 1,
+      parseInt(dateOfBirth.day)
+    );
+
+    if (isNaN(date.getTime())) {
+      throw new Error("Ngày sinh không hợp lệ");
+    }
+
+    // Check if user is at least 13 years old
+    const today = new Date();
+    const age = today.getFullYear() - date.getFullYear();
+    if (age < 13) {
+      throw new Error("Bạn phải từ 13 tuổi trở lên");
+    }
+
+    return true;
+  };
+
+  const formatDate = (date: typeof dateOfBirth): string => {
+    const { year, month, day } = date;
+    const formattedMonth = month.padStart(2, "0");
+    const formattedDay = day.padStart(2, "0");
+
+    return `${year}-${formattedMonth}-${formattedDay}`;
+  };
+
+  const onSubmit = async (data: FormData) => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      // Validate date of birth
+      validateDateOfBirth();
+
+      const formattedDate = formatDate(dateOfBirth);
+
+      const response = await fetch("http://localhost:4000/users/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          confirm_password: data.confirm_password,
+          date_of_birth: formattedDate,
+        }),
+      });
+      console.log("response", response);
+      console.log("formattedDate ", formattedDate);
+      const responseData = await response.json();
+      console.log("responseData", responseData);
+      if (!response.ok) {
+        throw new Error(responseData.errors.email.msg || "Đăng ký thất bại");
+      }
+
+      setIsFormRegister(false);
+      form.reset();
+      setDateOfBirth({ day: "", month: "", year: "" });
+      toast({
+        title: "Đăng ký thành công. Vui lòng đăng nhập !",
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Đã xảy ra lỗi");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <>
-      <button
-        onClick={() => setisFormRegister(true)}
-        className="text-center rounded-full bg-blue-500 font-bold text-white  px-4 py-2 text-base h-16 w-full shadow-sm border border-slate-400 hover:bg-blue-600"
+    <div className="w-full">
+      <Button
+        onClick={() => setIsFormRegister(true)}
+        className="w-full h-16 rounded-full bg-blue-500 hover:bg-blue-600 text-white font-bold"
       >
         Tạo tài khoản
-      </button>
+      </Button>
 
-      {isFormRegister ? (
+      {isFormRegister && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-          <div className=" bg-white rounded-xl w-full max-w-md">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-3 p-3">
+          <div className="bg-white rounded-xl w-full max-w-md p-5">
+            <div className="flex justify-between items-center mb-5">
               <button
-                onClick={() => setisFormRegister(false)}
+                onClick={() => setIsFormRegister(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
               >
-                <span className="text-lg">✕</span>
+                <span>✕</span>
               </button>
               <div>
                 <svg viewBox="0 0 24 24" className="w-8 h-8">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
               </div>
-              <div className="w-8"></div>
+              <div className="w-8" />
             </div>
 
-            {/* Content */}
-            <div className="flex flex-col p-5">
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-5"
-                >
-                  <h1 className="font-bold text-2xl">Tạo tài khoản của bạn</h1>
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tên tài khoản</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập tên tài khoản" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+                {error}
+              </div>
+            )}
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mật khẩu</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập mật khẩu" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nhập lại mật khẩu</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập lại mật khẩu" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <span>Ngày sinh</span>
-                  <div className="flex">
-                    <DatePicker onDateChange={handleDateChange} />
-                  </div>
-                </form>
-              </Form>
-              <Button
-                className="mt-3 rounded-full font-bold hover:bg-slate-700"
-                type="submit"
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
               >
-                Đăng ký
-              </Button>
-            </div>
+                <h1 className="font-bold text-2xl mb-5">
+                  Tạo tài khoản của bạn
+                </h1>
+
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tên tài khoản</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nhập tên tài khoản" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nhập email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mật khẩu</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Nhập mật khẩu"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirm_password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nhập lại mật khẩu</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Nhập lại mật khẩu"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div>
+                  <span className="block mb-2">Ngày sinh</span>
+                  <DatePicker onDateChange={handleDateChange} />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full rounded-full font-bold hover:bg-slate-700 mt-5"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Đang đăng ký..." : "Đăng ký"}
+                </Button>
+              </form>
+            </Form>
           </div>
         </div>
-      ) : (
-        ""
       )}
-    </>
+    </div>
   );
 }

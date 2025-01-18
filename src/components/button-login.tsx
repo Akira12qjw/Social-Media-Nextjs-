@@ -10,31 +10,42 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
-const formSchema = z.object({
-  username: z.string().min(2).max(50),
-  password: z.string().min(2).max(50),
-});
+import { FormTypeLogin } from "@/hooks/useFormLogin";
+import { formSchemaLogin } from "@/schemaValidations/auth.schema";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function ButtonLogin() {
   const [isFormLogin, setisFormLogin] = useState(false);
+  const [isloading, setLoading] = useState(false);
+  const { replace } = useRouter();
   // 1. Define your form.
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormTypeLogin>({
+    resolver: zodResolver(formSchemaLogin),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
 
-  // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+  async function onSubmit(value: FormTypeLogin) {
+    setLoading(true);
+    const { email, password } = value;
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+    if (result?.ok) {
+      setLoading(false);
+      replace("/home");
+    }
+    if (result?.error) {
+      setLoading(false);
+      alert("Login failed. Try again.");
+    }
   }
 
   return (
@@ -72,15 +83,15 @@ export default function ButtonLogin() {
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-5"
                 >
-                  <h1 className="font-bold text-2xl">Tạo tài khoản của bạn</h1>
+                  <h1 className="font-bold text-2xl">Đăng nhập</h1>
                   <FormField
                     control={form.control}
-                    name="username"
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tên tài khoản</FormLabel>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nhập tên tài khoản" {...field} />
+                          <Input placeholder="Nhập email" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -94,20 +105,20 @@ export default function ButtonLogin() {
                       <FormItem>
                         <FormLabel>Nhập mật khẩu</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nhập lại mật khẩu" {...field} />
+                          <Input placeholder="Nhập mật khẩu" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  <Button
+                    className="mt-3 w-full rounded-full font-bold hover:bg-slate-700"
+                    type="submit"
+                  >
+                    {isloading ? "Đang đăng nhập..." : "Đăng nhập"}
+                  </Button>
                 </form>
               </Form>
-              <Button
-                className="mt-3 rounded-full font-bold hover:bg-slate-700"
-                type="submit"
-              >
-                Đăng nhập
-              </Button>
 
               <Button
                 className="mt-5 rounded-full font-bold bg-white hover:bg-slate-100 text-black border-2"
