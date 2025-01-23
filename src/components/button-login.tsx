@@ -16,8 +16,11 @@ import { FormTypeLogin } from "@/hooks/useFormLogin";
 import { formSchemaLogin } from "@/schemaValidations/auth.schema";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ButtonLogin() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { status } = useAuth(false);
   const [isFormLogin, setisFormLogin] = useState(false);
   const [isloading, setLoading] = useState(false);
   const { replace } = useRouter();

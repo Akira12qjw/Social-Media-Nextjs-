@@ -4,13 +4,12 @@ import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Google OAuth provider configuration
     GoogleProvider({
       clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
       clientSecret: process.env.NEXT_PUBLIC_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "openid profile",
+          scope: "openid profile email",
         },
       },
     }),
@@ -36,12 +35,15 @@ export const authOptions: NextAuthOptions = {
           });
 
           const data = await response.json();
-
           if (!response.ok) {
             throw new Error(data.message || "Đăng nhập thất bại");
           }
 
           if (data.result?.access_token) {
+            // Lưu token vào localStorage
+
+            console.log("Data: ", data);
+
             return {
               id: "1",
               email: credentials.email,
@@ -53,7 +55,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         } catch (error) {
           console.error("Lỗi đăng nhập:", error);
-          throw error;
+          if (error instanceof Error) {
+            throw new Error(error.message || "Lỗi đăng nhập");
+          } else {
+            throw new Error("Lỗi đăng nhập");
+          }
         }
       },
     }),
@@ -67,6 +73,7 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.accessToken = token.accessToken as string;

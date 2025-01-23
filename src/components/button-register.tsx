@@ -15,21 +15,22 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DatePicker from "./DatePicker";
 import { toast } from "@/hooks/use-toast";
+import { formSchemaRegister } from "@/schemaValidations/auth.schema";
 
 // Define validation schema
-const formSchema = z
-  .object({
-    name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
-    email: z.string().email("Email không hợp lệ"),
-    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
-    confirm_password: z.string(),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: "Mật khẩu không khớp",
-    path: ["confirm_password"],
-  });
+// const formSchema = z
+//   .object({
+//     name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
+//     email: z.string().email("Email không hợp lệ"),
+//     password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+//     confirm_password: z.string(),
+//   })
+//   .refine((data) => data.password === data.confirm_password, {
+//     message: "Mật khẩu không khớp",
+//     path: ["confirm_password"],
+//   });
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof formSchemaRegister>;
 
 export default function ButtonRegister() {
   const [isFormRegister, setIsFormRegister] = useState(false);
@@ -42,7 +43,7 @@ export default function ButtonRegister() {
   });
 
   const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchemaRegister),
     defaultValues: {
       name: "",
       email: "",
