@@ -13,22 +13,10 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import DatePicker from "./DatePicker";
+import DatePicker from "./_components/DatePicker";
 import { toast } from "@/hooks/use-toast";
 import { formSchemaRegister } from "@/schemaValidations/auth.schema";
-
-// Define validation schema
-// const formSchema = z
-//   .object({
-//     name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
-//     email: z.string().email("Email không hợp lệ"),
-//     password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
-//     confirm_password: z.string(),
-//   })
-//   .refine((data) => data.password === data.confirm_password, {
-//     message: "Mật khẩu không khớp",
-//     path: ["confirm_password"],
-//   });
+import PasswordInput from "../../../components/PasswordInput";
 
 type FormData = z.infer<typeof formSchemaRegister>;
 
@@ -147,9 +135,9 @@ export default function ButtonRegister() {
       </Button>
 
       {isFormRegister && (
-        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 ">
           <div className="bg-white rounded-xl w-full max-w-md p-5">
-            <div className="flex justify-between items-center mb-5">
+            <div className="flex justify-between items-center mb-2">
               <button
                 onClick={() => setIsFormRegister(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
@@ -165,7 +153,7 @@ export default function ButtonRegister() {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+              <div className=" p-3 bg-red-100 text-red-600 rounded-lg">
                 {error}
               </div>
             )}
@@ -173,11 +161,9 @@ export default function ButtonRegister() {
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
+                className="space-y-3"
               >
-                <h1 className="font-bold text-2xl mb-5">
-                  Tạo tài khoản của bạn
-                </h1>
+                <h1 className="font-bold text-2xl">Tạo tài khoản của bạn</h1>
 
                 <FormField
                   control={form.control}
@@ -211,17 +197,13 @@ export default function ButtonRegister() {
                   control={form.control}
                   name="password"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Mật khẩu</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Nhập mật khẩu"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <PasswordInput
+                      form={form}
+                      field={field}
+                      name="password"
+                      label="Nhập mật khẩu"
+                      placeholder="Nhập mật khẩu"
+                    />
                   )}
                 />
 
@@ -229,22 +211,18 @@ export default function ButtonRegister() {
                   control={form.control}
                   name="confirm_password"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nhập lại mật khẩu</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Nhập lại mật khẩu"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <PasswordInput
+                      form={form}
+                      field={field}
+                      name="confirm_password"
+                      label="Nhập lại mật khẩu"
+                      placeholder="Nhập lại mật khẩu"
+                    />
                   )}
                 />
 
                 <div>
-                  <span className="block mb-2">Ngày sinh</span>
+                  <span className="block ">Ngày sinh</span>
                   <DatePicker onDateChange={handleDateChange} />
                 </div>
 

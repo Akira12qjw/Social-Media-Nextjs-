@@ -1,6 +1,7 @@
-import ButtonGoogle from "@/components/button-google";
-import ButtonLogin from "@/components/button-login";
-import ButtonRegister from "@/components/button-register";
+import ButtonGoogle from "@/app/(auth)/Login/button-google";
+
+import ButtonRegister from "@/app/(auth)/Register/button-register";
+import ButtonLogin from "./(auth)/Login/button-login";
 
 export default function Home() {
   return (
