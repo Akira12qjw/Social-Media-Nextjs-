@@ -17,6 +17,7 @@ import { formSchemaLogin } from "@/schemaValidations/auth.schema";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function ButtonLogin() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -100,18 +101,17 @@ export default function ButtonLogin() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nhập mật khẩu</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nhập mật khẩu" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                      <PasswordInput
+                        form={form}
+                        field={field}
+                        name="password"
+                        label="Nhập mật khẩu"
+                        placeholder="Nhập mật khẩu"
+                      />
                     )}
                   />
                   <Button
