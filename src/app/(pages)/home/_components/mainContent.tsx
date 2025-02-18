@@ -1,9 +1,32 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { Input } from "../../../../components/ui/input";
 import Feeds from "../../tweet/_components/Feeds";
 import Post from "@/app/(pages)/tweet/_components/button-post";
+import { getTweet } from "@/utils/getTweet";
+import { TweetType } from "@/schemaValidations/tweet.schema";
+import Trending from "./Trending";
+import SuggestFollow from "./suggestFollow";
 
 export default function MainContent() {
+  const [tweetData, setTweetData] = useState<TweetType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getTweet();
+        setTweetData(data.tweets);
+      } catch (error) {
+        console.error("Error fetching tweets:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="flex flex-grow flex-shrink p-5">
       <div className="w-full border-r border-gray-200">
@@ -52,11 +75,16 @@ export default function MainContent() {
         {/* Feed Section */}
         <div className=" divide-y divide-gray-200 ">
           {/* Feed content will go here */}
-          <Feeds />
+          <Feeds tweetData={tweetData} loading={loading} />
         </div>
       </div>
       <div className="ml-4 w-[40%]">
-        <div className="sticky top-1"></div>
+        <div className=" border rounded-xl fixed">
+          <Trending tweetData={tweetData} />
+        </div>
+        <div className="mt-48 border rounded-xl fixed">
+          <SuggestFollow tweetData={tweetData} />
+        </div>
       </div>
     </div>
   );

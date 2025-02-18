@@ -1,34 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
-import { getTweet } from "@/utils/getTweet";
+
 import { TweetType } from "@/schemaValidations/tweet.schema";
 import Interract from "@/app/(pages)/tweet/_components/interract";
 import SelectedTweet from "@/app/(pages)/tweet/_components/selectedTweet";
 import MediaGrid from "@/app/(pages)/tweet/_components/renderMediaGrid";
 import Loading from "../../../../components/Loading";
-export default function Feeds() {
-  const [tweets, setTweets] = useState<TweetType[]>([]);
-  const [meta, setMeta] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(true);
+export default function Feeds({
+  tweetData,
+  loading,
+}: {
+  tweetData: TweetType[];
+  loading: boolean;
+}) {
   const [selectedTweet, setSelectedTweet] = useState<TweetType | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  useEffect(() => {
-    const fetchTweets = async () => {
-      try {
-        const data = await getTweet();
-        setTweets(data.tweets);
-        setMeta(data.meta); // Thông tin meta.
-      } catch (error) {
-        console.error("Error fetching tweets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTweets();
-  }, []);
 
   const openModal = (tweet: TweetType, initialImageIndex: number = 0) => {
     setSelectedTweet(tweet);
@@ -61,11 +49,9 @@ export default function Feeds() {
       </div>
     );
   }
-  console.log("Tweets: ", tweets);
-  console.log("Meta: ", meta);
   return (
     <>
-      {tweets.map((tweet) => (
+      {tweetData.map((tweet) => (
         <div
           key={tweet._id}
           className="flex flex-row pt-3 border-r border-gray-200"
