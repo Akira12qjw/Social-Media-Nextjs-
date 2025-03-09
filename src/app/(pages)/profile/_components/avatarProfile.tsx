@@ -1,30 +1,36 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { getProfile } from "../../../../utils/getProfile";
-import { AccountType } from "@/schemaValidations/account.schema";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getProfile } from "@/services/profile.service";
+import { useEffect, useState } from "react";
 
 export default function AvatarProfile() {
-  const [profile, setProfile] = useState<AccountType | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const data = await getProfile();
-        setProfile(data);
+        const response = await getProfile();
+        if (response.success) {
+          setAvatarUrl(response.data.avatar || null);
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
     };
+
     fetchProfile();
   }, []);
-  console.log("Profile: ", profile);
+
   return (
     <div>
       <Avatar>
         <AvatarImage
           className="w-16 h-16"
-          src={profile?.avatar || "https://github.com/shadcn.png"}
+          src={
+            avatarUrl ||
+            "https://res.cloudinary.com/dwyvtyasp/image/upload/v1734597632/xgkaepsmtzdf25tqtzsi.png"
+          }
           alt="profile"
         />
         <AvatarFallback>CN</AvatarFallback>
