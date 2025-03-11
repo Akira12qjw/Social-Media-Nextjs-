@@ -1,33 +1,35 @@
+"use client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { TweetType } from "@/schemaValidations/tweet.schema";
+import { useTweet } from "@/context/TweetContext";
 import { MoreHorizontal } from "lucide-react";
 import React from "react";
 
-export default function Trending({ tweetData }: { tweetData: TweetType[] }) {
-  // const formatPostCount = (count: number): string => {
-  //   if (count >= 1000 && count < 1000000) {
-  //     return `${(count / 1000).toFixed(1).replace(/\.0$/, "")} N`;
-  //   }
-  //   return count.toString();
-  // };
+export default function Trending() {
+  const { tweets: tweetData } = useTweet();
 
   return (
-    <>
-      <Card className="max-w-md w-full border-none">
-        <CardContent className="p-5">
-          <h2 className="text-xl font-bold mb-4">Những điều đang diễn ra</h2>
+    <div className="bg-gray-50 rounded-xl">
+      <div className="p-3">
+        <span className="text-xl font-bold">Xu hướng cho bạn</span>
+      </div>
+      <div className="hover:bg-gray-200 cursor-pointer">
+        <div className="p-3">
+          <div className="flex items-center text-sm text-gray-500">
+            <span>Đang thịnh hành</span>
+          </div>
           {tweetData
             .filter((topic) => topic.hashtags && topic.hashtags.length > 0)
             .map((topic, index) => (
               <div key={index} className="py-1">
                 <div>
-                  {topic.hashtags && topic.hashtags.length > 0 ? (
+                  {topic.hashtags &&
+                  topic.hashtags.length > 0 &&
+                  topic.user_views > 1000 ? (
                     <div className="flex justify-between">
                       <div>
                         <div className="font-bold text-base">
                           {topic.hashtags
-                            .slice(0, 3)
+                            .slice(0, 2)
                             .map((tag) => `#${tag.name}`)
                             .join(" ")}
                         </div>
@@ -47,11 +49,8 @@ export default function Trending({ tweetData }: { tweetData: TweetType[] }) {
                 </div>
               </div>
             ))}
-          {/* <Button variant="link" className="text-blue-400 mt-2 p-0 h-auto">
-            Hiển thị thêm
-          </Button> */}
-        </CardContent>
-      </Card>
-    </>
+        </div>
+      </div>
+    </div>
   );
 }

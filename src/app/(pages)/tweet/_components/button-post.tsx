@@ -2,18 +2,24 @@
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Avatar from "../../profile/_components/avatarProfile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Dialog, DialogClose } from "@/components/ui/dialog";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-export default function Post() {
+interface PostProps {
+  onPostSuccess?: () => void;
+}
+
+export default function Post({ onPostSuccess }: PostProps) {
   const accessToken = localStorage.getItem("accessToken");
   const [content, setContent] = useState("");
   const { toast } = useToast();
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const closeDialogRef = useRef<HTMLButtonElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -109,7 +115,7 @@ export default function Post() {
     return uploadedMedia;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
     if (!content.trim()) {
@@ -167,6 +173,9 @@ export default function Post() {
       toast({
         title: "Đăng bài viết thành công!",
       });
+
+      // Call the callback function if provided
+      onPostSuccess?.();
     } catch (error) {
       console.error("Lỗi:", error);
       toast({
@@ -267,6 +276,9 @@ export default function Post() {
             >
               {isUploading ? "Đang tải lên..." : "Đăng"}
             </button>
+            <Dialog>
+              <DialogClose ref={closeDialogRef} className="hidden" />
+            </Dialog>
           </div>
         </div>
       </div>

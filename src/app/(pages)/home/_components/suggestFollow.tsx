@@ -1,17 +1,15 @@
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TweetType } from "@/schemaValidations/tweet.schema";
+import { useTweet } from "@/context/TweetContext";
+
 import React from "react";
 
-export default function SuggestFollow({
-  tweetData,
-}: {
-  tweetData: TweetType[];
-}) {
+export default function SuggestFollow() {
+  const { tweets: tweetData } = useTweet();
   return (
     <>
-      <Card className="max-w-md w-full border-none">
+      <Card className="bg-gray-50 max-w-md w-full border-none">
         <CardHeader>
           <CardTitle>Gợi ý theo dõi</CardTitle>
         </CardHeader>
@@ -34,8 +32,8 @@ export default function SuggestFollow({
                 </div>
               </div>
               <Button
+                className="rounded-full bg-black text-white font-bold hover:bg-gray-800 hover:text-white "
                 variant="outline"
-                className="rounded-full bg-white text-black hover:bg-gray-200"
               >
                 Theo dõi
               </Button>

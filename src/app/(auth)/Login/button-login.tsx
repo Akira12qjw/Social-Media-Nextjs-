@@ -18,14 +18,15 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
 import PasswordInput from "@/components/PasswordInput";
+import { ENDPOINTS } from "@/constants/config";
+import { toast } from "@/hooks/use-toast";
 
 export default function ButtonLogin() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { status } = useAuth(false);
   const [isFormLogin, setisFormLogin] = useState(false);
   const [isloading, setLoading] = useState(false);
   const { replace } = useRouter();
-  // 1. Define your form.
+
   const form = useForm<FormTypeLogin>({
     resolver: zodResolver(formSchemaLogin),
     defaultValues: {
@@ -35,20 +36,52 @@ export default function ButtonLogin() {
   });
 
   async function onSubmit(value: FormTypeLogin) {
-    setLoading(true);
-    const { email, password } = value;
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-    if (result?.ok) {
+    try {
+      setLoading(true);
+      const { email, password } = value;
+
+      // First, get tokens from the backend
+      const loginResponse = await fetch(`${ENDPOINTS.USERS.LOGIN}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const loginData = await loginResponse.json();
+
+      if (!loginResponse.ok) {
+        throw new Error(loginData.message || "Login failed");
+      }
+
+      // Store tokens in localStorage
+      localStorage.setItem("accessToken", loginData.result.access_token);
+      localStorage.setItem("refreshToken", loginData.result.refresh_token);
+
+      // Then sign in with next-auth
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        replace("/home");
+        toast({
+          title: "Đăng nhập thành công!",
+        });
+      } else {
+        throw new Error(result?.error || "Login failed");
+      }
+    } catch (error) {
+      toast({
+        title: "Đăng nhập thất bại",
+        description: error instanceof Error ? error.message : "Đã xảy ra lỗi",
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-      replace("/home");
-    }
-    if (result?.error) {
-      setLoading(false);
-      alert("Login failed. Try again.");
     }
   }
 
@@ -95,7 +128,11 @@ export default function ButtonLogin() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nhập email" {...field} />
+                          <Input
+                            placeholder="Nhập email"
+                            {...field}
+                            autoComplete="email"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -117,6 +154,7 @@ export default function ButtonLogin() {
                   <Button
                     className="mt-3 w-full rounded-full font-bold hover:bg-slate-700"
                     type="submit"
+                    disabled={isloading}
                   >
                     {isloading ? "Đang đăng nhập..." : "Đăng nhập"}
                   </Button>
@@ -125,16 +163,14 @@ export default function ButtonLogin() {
 
               <Button
                 className="mt-5 rounded-full font-bold bg-white hover:bg-slate-100 text-black border-2"
-                type="submit"
+                type="button"
               >
                 Quên mật khẩu ?
               </Button>
             </div>
           </div>
         </div>
-      ) : (
-        ""
-      )}
+      ) : null}
     </>
   );
 }

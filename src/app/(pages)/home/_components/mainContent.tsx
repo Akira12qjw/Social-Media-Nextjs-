@@ -1,89 +1,70 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { Input } from "../../../../components/ui/input";
-import Feeds from "../../tweet/_components/Feeds";
-import Post from "@/app/(pages)/tweet/_components/button-post";
-import { getTweet } from "@/utils/getTweet";
-import { TweetType } from "@/schemaValidations/tweet.schema";
-import Trending from "./Trending";
+import { Search } from "lucide-react";
 import SuggestFollow from "./suggestFollow";
+import Trending from "./Trending";
+import Feeds from "../../tweet/_components/Feeds";
+import { useTweet } from "@/context/TweetContext";
 
 export default function MainContent() {
-  const [tweetData, setTweetData] = useState<TweetType[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getTweet();
-        setTweetData(data.tweets);
-      } catch (error) {
-        console.error("Error fetching tweets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const { tweets, loading, hasMore, loadMoreTweets } = useTweet();
 
   return (
-    <div className="flex flex-grow flex-shrink p-5">
-      <div className="w-full border-r border-gray-200">
-        {/* Header Section */}
-        <div className="h-10 w-10"></div>
-        <div className="fixed top-[-2px] z-10 w-full md:w-[679px] bg-white/95 border-b border-gray-200">
-          <div className=" mx-auto px-4 py-3">
-            <div className="flex gap-8 items-center justify-between">
-              <div className="text-xl  font-bold cursor-pointer text-gray-500 hover:text-black pr-7">
-                Dành cho bạn
-              </div>
-              <div className="text-xl font-bold text-gray-500 cursor-pointer hover:text-black">
+    <div className="flex">
+      {/* Main feed */}
+      <div className="flex-1 min-h-screen border-x border-gray-200">
+        {/* Header - Fixed at top */}
+        <div className="fixed top-0 z-50 bg-white/60 backdrop-blur w-[660px] border-x border-gray-200">
+          <div className="flex h-14">
+            <div className="flex-1 flex items-center justify-center hover:bg-gray-200/70 cursor-pointer transition-colors">
+              <span className="text-[15px] font-medium">Dành cho bạn</span>
+            </div>
+            <div className="flex-1 flex items-center justify-center hover:bg-gray-200/70 cursor-pointer transition-colors">
+              <span className="text-[15px] font-medium text-gray-600">
                 Theo dõi
-              </div>
-              <div className="relative">
-                <Input
-                  className="w-auto rounded-full p-5 ps-10"
-                  type="text"
-                  placeholder="Tìm kiếm"
-                />
-                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-gray-500 dark:text-gray-400"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                    />
-                  </svg>
-                </div>
-              </div>
+              </span>
             </div>
           </div>
+          <div className="h-1 w-1/2 bg-primary"></div>
         </div>
 
-        {/* Post Creation Section */}
-        <Post />
-
-        {/* Feed Section */}
-        <div className=" divide-y divide-gray-200 ">
-          {/* Feed content will go here */}
-          <Feeds tweetData={tweetData} loading={loading} />
+        {/* Padding top để tránh content bị che bởi fixed header */}
+        <div className="pt-[60px]">
+          {/* Feed content */}
+          <Feeds
+            tweetData={tweets}
+            loading={loading}
+            hasMore={hasMore}
+            onLoadMore={loadMoreTweets}
+          />
         </div>
       </div>
-      <div className="ml-4 w-[40%]">
-        <div className=" border rounded-xl fixed">
-          <Trending tweetData={tweetData} />
-        </div>
-        <div className="mt-48 border rounded-xl fixed">
-          <SuggestFollow tweetData={tweetData} />
+
+      {/* Right sidebar */}
+      <div className="w-[350px] relative">
+        <div className="pl-8 py-2 fixed w-[350px]">
+          {/* Search bar */}
+          <div className="sticky top-2 z-40 bg-white pb-3">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Tìm kiếm"
+                className="w-full bg-gray-100 rounded-full py-2 pl-10 pr-4 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          {/* Trending and Suggestions */}
+          <div className="space-y-4 mt-4 max-h-[calc(100vh-80px)] overflow-y-auto">
+            <div className="bg-gray-50 rounded-xl">
+              <Trending />
+            </div>
+            <div className="bg-gray-50 rounded-xl">
+              <SuggestFollow />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,28 +1,34 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from "@/SessionProvider";
 import { Toaster } from "@/components/ui/toaster";
-import TokenHandler from "@/components/TokenHandler";
+import { TweetProvider } from "@/context/TweetContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { SessionProvider } from "@/SessionProvider";
+import TokenHandler from "@/components/TokenHandler";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Social Media",
-  description: "Social Media",
+  title: "Twitter Clone",
+  description: "A Twitter clone built with Next.js and TypeScript",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body>
+      <body className={inter.className}>
         <SessionProvider>
           <SidebarProvider>
             <TokenHandler />
-            {children}
-            <Toaster />
+            <TweetProvider>
+              {children}
+              <Toaster />
+            </TweetProvider>
           </SidebarProvider>
         </SessionProvider>
       </body>

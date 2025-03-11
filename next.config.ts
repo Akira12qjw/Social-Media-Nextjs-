@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         hostname: "twitter-clone-3.s3.ap-southeast-1.amazonaws.com",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "github.com",
+        pathname: "**",
+      },
     ],
   },
   experimental: {
