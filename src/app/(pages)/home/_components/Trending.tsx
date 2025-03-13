@@ -7,6 +7,16 @@ import React from "react";
 export default function Trending() {
   const { tweets: tweetData } = useTweet();
 
+  // Filter tweets that have hashtags and more than 500 views
+  const trendingTweets = tweetData.filter(
+    (tweet) =>
+      tweet.hashtags && tweet.hashtags.length > 0 && tweet.user_views > 100
+  );
+
+  if (trendingTweets.length === 0) {
+    return null;
+  }
+
   return (
     <div className="bg-gray-50 rounded-xl">
       <div className="p-3">
@@ -17,38 +27,32 @@ export default function Trending() {
           <div className="flex items-center text-sm text-gray-500">
             <span>Đang thịnh hành</span>
           </div>
-          {tweetData
-            .filter((topic) => topic.hashtags && topic.hashtags.length > 0)
-            .map((topic, index) => (
-              <div key={index} className="py-1">
-                <div>
-                  {topic.hashtags &&
-                  topic.hashtags.length > 0 &&
-                  topic.user_views > 1000 ? (
-                    <div className="flex justify-between">
-                      <div>
-                        <div className="font-bold text-base">
-                          {topic.hashtags
-                            .slice(0, 2)
-                            .map((tag) => `#${tag.name}`)
-                            .join(" ")}
-                        </div>
-                        <p className="text-gray-400 text-sm mt-1">
-                          {topic.user_views || 0} views
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 text-gray-400"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+          {trendingTweets.map((topic, index) => (
+            <div key={index} className="py-1">
+              <div>
+                <div className="flex justify-between">
+                  <div>
+                    <div className="font-bold text-base">
+                      {topic.hashtags
+                        .slice(0, 2)
+                        .map((tag) => `#${tag.name}`)
+                        .join(" ")}
                     </div>
-                  ) : null}
+                    <p className="text-gray-400 text-sm mt-1">
+                      {topic.user_views || 0} views
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 text-gray-400"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>

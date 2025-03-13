@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
 import ModalProfile from "./modalProfile";
 import Trending from "../../home/_components/Trending";
 import SuggestFollow from "../../home/_components/suggestFollow";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { getProfile } from "@/services/profile.service";
 
 export default function MyProfile() {
@@ -24,19 +24,12 @@ export default function MyProfile() {
         if (response.success) {
           setProfile(response.data);
         } else {
-          toast({
-            title: "Error fetching profile",
-            description: response.message,
-            variant: "destructive",
-          });
+          toast.error(response.message);
         }
       } catch (error) {
-        toast({
-          title: "Error",
-          description:
-            error instanceof Error ? error.message : "Failed to fetch profile",
-          variant: "destructive",
-        });
+        toast.error(
+          error instanceof Error ? error.message : "Failed to fetch profile"
+        );
       } finally {
         setIsLoading(false);
       }

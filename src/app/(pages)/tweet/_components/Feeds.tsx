@@ -82,6 +82,20 @@ export default function Feeds({
       setCurrentImageIndex(currentImageIndex - 1);
     }
   };
+
+  const formatTimeFromNow = (createdAt: string) => {
+    const createdTime = new Date(createdAt).getTime();
+    const now = Date.now();
+    const diffMs = now - createdTime;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+    if (diffHours < 24) {
+      return `${diffHours} giờ trước`;
+    } else {
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays} ngày trước`;
+    }
+  };
   return (
     <div>
       {tweetData.map((tweet) => (
@@ -103,18 +117,16 @@ export default function Feeds({
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-1">
-                  <span className="font-bold">{tweet.user?.username}</span>
+                  <span className="font-bold hover:underline cursor-pointer">
+                    {tweet.user?.username}
+                  </span>
                   <span className="text-gray-500">
                     @{tweet.user?.email?.split("@")[0]}
                   </span>
+                  <span className="text-gray-500 ">
+                    · {formatTimeFromNow(tweet.created_at)}
+                  </span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-gray-500"
-                >
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
               </div>
               <p className="text-gray-900 mt-1">{tweet.content}</p>
               <div>

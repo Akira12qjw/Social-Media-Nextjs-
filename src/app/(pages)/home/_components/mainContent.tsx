@@ -4,6 +4,7 @@ import SuggestFollow from "./suggestFollow";
 import Trending from "./Trending";
 import Feeds from "../../tweet/_components/Feeds";
 import { useTweet } from "@/context/TweetContext";
+import Post from "../../tweet/_components/button-post";
 
 export default function MainContent() {
   const { tweets, loading, hasMore, loadMoreTweets } = useTweet();
@@ -15,7 +16,7 @@ export default function MainContent() {
         {/* Header - Fixed at top */}
         <div className="fixed top-0 z-50 bg-white/60 backdrop-blur w-[660px] border-x border-gray-200">
           <div className="flex h-14">
-            <div className="flex-1 flex items-center justify-center hover:bg-gray-200/70 cursor-pointer transition-colors">
+            <div className="flex-1 flex items-center justify-center  hover:bg-gray-200/70 cursor-pointer transition-colors">
               <span className="text-[15px] font-medium">Dành cho bạn</span>
             </div>
             <div className="flex-1 flex items-center justify-center hover:bg-gray-200/70 cursor-pointer transition-colors">
@@ -24,11 +25,11 @@ export default function MainContent() {
               </span>
             </div>
           </div>
-          <div className="h-1 w-1/2 bg-primary"></div>
+          <div className="h-1 w-1/2 bg-sky-500"></div>
         </div>
-
         {/* Padding top để tránh content bị che bởi fixed header */}
         <div className="pt-[60px]">
+          <Post />
           {/* Feed content */}
           <Feeds
             tweetData={tweets}
@@ -51,7 +52,7 @@ export default function MainContent() {
               <input
                 type="text"
                 placeholder="Tìm kiếm"
-                className="w-full bg-gray-100 rounded-full py-2 pl-10 pr-4 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full bg-gray-100 rounded-full py-2 pl-10 pr-4 ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
               />
             </div>
           </div>

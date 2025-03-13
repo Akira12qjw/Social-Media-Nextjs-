@@ -1,12 +1,12 @@
 "use client";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import React, { useState, useRef } from "react";
 import Avatar from "../../profile/_components/avatarProfile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogClose } from "@/components/ui/dialog";
-
+import { toast } from "sonner";
+import Link from "next/link";
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 interface PostProps {
@@ -16,7 +16,7 @@ interface PostProps {
 export default function Post({ onPostSuccess }: PostProps) {
   const accessToken = localStorage.getItem("accessToken");
   const [content, setContent] = useState("");
-  const { toast } = useToast();
+
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const closeDialogRef = useRef<HTMLButtonElement>(null);
@@ -24,10 +24,7 @@ export default function Post({ onPostSuccess }: PostProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (mediaFiles.length + files.length > 4) {
-      toast({
-        title: "Vượt quá giới hạn",
-        description: "Chỉ được đăng tối đa 4 hình ảnh hoặc video",
-      });
+      toast.error("Vượt quá giới hạn");
       return;
     }
 
@@ -58,11 +55,9 @@ export default function Post({ onPostSuccess }: PostProps) {
     });
 
     if (validFiles.length !== files.length) {
-      toast({
-        title: "Một số file không hợp lệ",
-        description:
-          "Chỉ chấp nhận ảnh (JPG, PNG, GIF, WEBP < 5MB) hoặc video (MP4, WEBM, MOV < 100MB)",
-      });
+      toast.error(
+        "Chỉ chấp nhận ảnh (JPG, PNG, GIF, WEBP < 5MB) hoặc video (MP4, WEBM, MOV < 100MB)"
+      );
     }
 
     const newFiles = [...mediaFiles, ...validFiles].slice(0, 4);
@@ -105,10 +100,7 @@ export default function Post({ onPostSuccess }: PostProps) {
         uploadedMedia.push(mediaObject);
       } catch (error) {
         console.error("Error uploading media:", error);
-        toast({
-          title: `Lỗi upload ${isImage ? "ảnh" : "video"}`,
-          description: (error as Error).message,
-        });
+        toast.error(`Lỗi upload ${isImage ? "ảnh" : "video"}`);
         throw error;
       }
     }
@@ -119,16 +111,12 @@ export default function Post({ onPostSuccess }: PostProps) {
     e.preventDefault();
 
     if (!content.trim()) {
-      toast({
-        title: "Vui lòng nhập nội dung bài viết!",
-      });
+      toast.error("Vui lòng nhập nội dung bài viết!");
       return;
     }
 
     if (!accessToken) {
-      toast({
-        title: "Bạn chưa đăng nhập",
-      });
+      toast.error("Bạn chưa đăng nhập");
       return;
     }
 
@@ -170,18 +158,13 @@ export default function Post({ onPostSuccess }: PostProps) {
 
       setContent("");
       setMediaFiles([]);
-      toast({
-        title: "Đăng bài viết thành công!",
-      });
+      toast.success("Đăng bài viết thành công!");
 
       // Call the callback function if provided
       onPostSuccess?.();
     } catch (error) {
       console.error("Lỗi:", error);
-      toast({
-        title: "Lỗi",
-        description: (error as Error).message,
-      });
+      toast.error((error as Error).message);
     } finally {
       setIsUploading(false);
     }
@@ -193,7 +176,9 @@ export default function Post({ onPostSuccess }: PostProps) {
         <SidebarTrigger className="md:hidden" />
 
         <div className="flex-shrink-0 mr-4">
-          <Avatar />
+          <Link href="/profile">
+            <Avatar />
+          </Link>
         </div>
         <div className="flex-grow">
           <Input

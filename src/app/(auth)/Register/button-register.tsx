@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,9 +15,10 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DatePicker from "./_components/DatePicker";
-import { toast } from "@/hooks/use-toast";
 import { formSchemaRegister } from "@/schemaValidations/auth.schema";
 import PasswordInput from "../../../components/PasswordInput";
+import { toast } from "sonner";
+import { debounce } from "lodash";
 
 type FormData = z.infer<typeof formSchemaRegister>;
 
@@ -40,14 +42,17 @@ export default function ButtonRegister() {
     },
   });
 
-  const handleDateChange = (type: string, value: string) => {
-    setDateOfBirth((prev) => ({
-      ...prev,
-      [type.toLowerCase()]: value,
-    }));
-  };
+  const handleDateChange = useCallback(
+    debounce((type: string, value: string) => {
+      setDateOfBirth((prev) => ({
+        ...prev,
+        [type.toLowerCase()]: value,
+      }));
+    }, 300),
+    []
+  );
 
-  const validateDateOfBirth = () => {
+  const validateDateOfBirth = useCallback(() => {
     if (!dateOfBirth.day || !dateOfBirth.month || !dateOfBirth.year) {
       throw new Error("Vui lòng chọn ngày sinh");
     }
@@ -62,7 +67,6 @@ export default function ButtonRegister() {
       throw new Error("Ngày sinh không hợp lệ");
     }
 
-    // Check if user is at least 13 years old
     const today = new Date();
     const age = today.getFullYear() - date.getFullYear();
     if (age < 13) {
@@ -70,15 +74,19 @@ export default function ButtonRegister() {
     }
 
     return true;
-  };
+  }, [dateOfBirth]);
 
-  const formatDate = (date: typeof dateOfBirth): string => {
-    const { year, month, day } = date;
-    const formattedMonth = month.padStart(2, "0");
-    const formattedDay = day.padStart(2, "0");
+  const formatDate = useMemo(
+    () =>
+      (date: typeof dateOfBirth): string => {
+        const { year, month, day } = date;
+        const formattedMonth = month.padStart(2, "0");
+        const formattedDay = day.padStart(2, "0");
 
-    return `${year}-${formattedMonth}-${formattedDay}`;
-  };
+        return `${year}-${formattedMonth}-${formattedDay}`;
+      },
+    []
+  );
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -115,9 +123,7 @@ export default function ButtonRegister() {
       setIsFormRegister(false);
       form.reset();
       setDateOfBirth({ day: "", month: "", year: "" });
-      toast({
-        title: "Đăng ký thành công. Vui lòng đăng nhập !",
-      });
+      toast.success("Đăng ký thành công. Vui lòng đăng nhập !");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Đã xảy ra lỗi");
     } finally {
@@ -135,8 +141,8 @@ export default function ButtonRegister() {
       </Button>
 
       {isFormRegister && (
-        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 ">
-          <div className="bg-white rounded-xl w-full max-w-md p-5">
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md p-5 my-4">
             <div className="flex justify-between items-center mb-2">
               <button
                 onClick={() => setIsFormRegister(false)}
@@ -153,7 +159,7 @@ export default function ButtonRegister() {
             </div>
 
             {error && (
-              <div className=" p-3 bg-red-100 text-red-600 rounded-lg">
+              <div className="p-3 bg-red-100 text-red-600 rounded-lg">
                 {error}
               </div>
             )}
@@ -161,7 +167,7 @@ export default function ButtonRegister() {
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-3"
+                className="space-y-3 max-h-[calc(100vh-10rem)] overflow-y-auto pr-2"
               >
                 <h1 className="font-bold text-2xl">Tạo tài khoản của bạn</h1>
 
@@ -172,7 +178,12 @@ export default function ButtonRegister() {
                     <FormItem>
                       <FormLabel>Tên tài khoản</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nhập tên tài khoản" {...field} />
+                        <Input
+                          placeholder="Nhập tên tài khoản"
+                          {...field}
+                          autoComplete="username"
+                          className="ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -186,7 +197,12 @@ export default function ButtonRegister() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nhập email" {...field} />
+                        <Input
+                          placeholder="Nhập email"
+                          autoComplete="email"
+                          className="ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -222,7 +238,7 @@ export default function ButtonRegister() {
                 />
 
                 <div>
-                  <span className="block ">Ngày sinh</span>
+                  <span className="block">Ngày sinh</span>
                   <DatePicker onDateChange={handleDateChange} />
                 </div>
 

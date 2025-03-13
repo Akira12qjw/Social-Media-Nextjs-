@@ -17,9 +17,6 @@ export default function ModalProfile({
   onClose,
   profile,
 }: ModalProfileProps) {
-  const [coverImage, setCoverImage] = useState<string>(
-    "https://twitter-clone-3.s3.ap-southeast-1.amazonaws.com/images/light-gray-color.png"
-  );
   const [name, setName] = useState(profile?.username || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [location, setLocation] = useState(profile?.location || "");

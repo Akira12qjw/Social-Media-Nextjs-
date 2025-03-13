@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,10 +20,9 @@ import { signIn } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
 import PasswordInput from "@/components/PasswordInput";
 import { ENDPOINTS } from "@/constants/config";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function ButtonLogin() {
-  const { status } = useAuth(false);
   const [isFormLogin, setisFormLogin] = useState(false);
   const [isloading, setLoading] = useState(false);
   const { replace } = useRouter();
@@ -68,18 +68,12 @@ export default function ButtonLogin() {
 
       if (result?.ok) {
         replace("/home");
-        toast({
-          title: "Đăng nhập thành công!",
-        });
+        toast.success("Đăng nhập thành công!");
       } else {
         throw new Error(result?.error || "Login failed");
       }
     } catch (error) {
-      toast({
-        title: "Đăng nhập thất bại",
-        description: error instanceof Error ? error.message : "Đã xảy ra lỗi",
-        variant: "destructive",
-      });
+      toast.error("Đăng nhập thất bại");
     } finally {
       setLoading(false);
     }
@@ -132,6 +126,7 @@ export default function ButtonLogin() {
                             placeholder="Nhập email"
                             {...field}
                             autoComplete="email"
+                            className="ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
                           />
                         </FormControl>
                         <FormMessage />

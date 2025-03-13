@@ -26,7 +26,7 @@ export default function AvatarProfile() {
     <div>
       <Avatar>
         <AvatarImage
-          className="w-16 h-16"
+          className="w-12 h-12 "
           src={
             avatarUrl ||
             "https://res.cloudinary.com/dwyvtyasp/image/upload/v1734597632/xgkaepsmtzdf25tqtzsi.png"

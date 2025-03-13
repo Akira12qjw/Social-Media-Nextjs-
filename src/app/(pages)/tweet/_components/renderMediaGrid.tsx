@@ -19,7 +19,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ medias, onImageClick }) => {
 
   return (
     <div
-      className={`grid gap-1 ${
+      className={`grid gap-1 transition-all ${
         gridClasses[Math.min(4, medias.length) as keyof typeof gridClasses]
       }`}
     >
@@ -50,10 +50,10 @@ const MediaGrid: React.FC<MediaGridProps> = ({ medias, onImageClick }) => {
                     alt="Content"
                     className="object-contain w-min h-auto"
                     width={500}
-                    height={500}
+                    height={200}
                     priority={isFirstImage}
                     loading={isFirstImage ? "eager" : "lazy"}
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 168px) 100vw, 50vw"
                   />
                 ) : (
                   <Image
