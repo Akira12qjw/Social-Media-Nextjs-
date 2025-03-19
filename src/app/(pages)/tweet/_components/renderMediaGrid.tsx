@@ -48,7 +48,7 @@ const MediaGrid: React.FC<MediaGridProps> = ({ medias, onImageClick }) => {
                   <Image
                     src={media.url || ""}
                     alt="Content"
-                    className="object-contain w-min h-auto"
+                    className="object-contain w-min h-auto rounded-md"
                     width={500}
                     height={200}
                     priority={isFirstImage}

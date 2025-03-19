@@ -5,22 +5,141 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { AccountType } from "@/schemaValidations/account.schema";
 import { DialogTitle } from "@radix-ui/react-dialog";
+import { updateProfile } from "@/services/profile.service";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+interface ValidationError {
+  type: string;
+  value: string;
+  msg: string;
+  path: string;
+  location: string;
+}
+
+interface ValidationErrors {
+  [key: string]: ValidationError;
+}
 
 interface ModalProfileProps {
   isOpen: boolean;
   onClose: () => void;
   profile: AccountType | null;
+  onProfileUpdate: (updatedProfile: AccountType) => void;
 }
 
 export default function ModalProfile({
   isOpen,
   onClose,
   profile,
+  onProfileUpdate,
 }: ModalProfileProps) {
+  const router = useRouter();
   const [name, setName] = useState(profile?.username || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [location, setLocation] = useState(profile?.location || "");
   const [website, setWebsite] = useState(profile?.website || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+
+  const validateUsername = (username: string) => {
+    if (username.length < 4 || username.length > 15) {
+      return "Tên người dùng phải dài từ 4 đến 15 ký tự";
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return "Tên người dùng chỉ được chứa chữ cái, số và dấu gạch dưới";
+    }
+    if (/^\d+$/.test(username)) {
+      return "Tên người dùng không được chỉ là số";
+    }
+    return "";
+  };
+
+  const validateBio = (bio: string) => {
+    if (bio.length < 1 || bio.length > 200) {
+      return "Tiểu sử phải dài từ 1 đến 200 ký tự";
+    }
+    return "";
+  };
+
+  const validateWebsite = (website: string) => {
+    if (website && (website.length < 1 || website.length > 200)) {
+      return "Trang web phải dài từ 1 đến 200 ký tự";
+    }
+    return "";
+  };
+
+  const handleSubmit = async () => {
+    try {
+      // Validate all fields
+      const usernameError = validateUsername(name);
+      const bioError = validateBio(bio);
+      const websiteError = validateWebsite(website);
+
+      const newErrors: ValidationErrors = {};
+      if (usernameError) {
+        newErrors.username = {
+          type: "field",
+          value: name,
+          msg: usernameError,
+          path: "username",
+          location: "body",
+        };
+      }
+      if (bioError) {
+        newErrors.bio = {
+          type: "field",
+          value: bio,
+          msg: bioError,
+          path: "bio",
+          location: "body",
+        };
+      }
+      if (websiteError) {
+        newErrors.website = {
+          type: "field",
+          value: website,
+          msg: websiteError,
+          path: "website",
+          location: "body",
+        };
+      }
+
+      setErrors(newErrors);
+
+      // If there are any errors, don't proceed with the update
+      if (Object.keys(newErrors).length > 0) {
+        return;
+      }
+
+      setIsLoading(true);
+      const response = await updateProfile({
+        username: name,
+        bio,
+        location,
+        website,
+      });
+
+      if (response.success) {
+        toast.success("Cập nhật hồ sơ thành công");
+        onProfileUpdate(response.data);
+        onClose();
+        // Refresh the page after successful update
+        router.refresh();
+        window.location.reload();
+      } else {
+        toast.error(response.message || "Có lỗi xảy ra khi cập nhật hồ sơ");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Có lỗi xảy ra khi cập nhật hồ sơ"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -117,25 +236,55 @@ export default function ModalProfile({
               <div className="space-y-1.5">
                 <Input
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.username) {
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.username;
+                        return newErrors;
+                      });
+                    }
+                  }}
                   placeholder="Tên"
-                  className="border rounded-md p-2 w-full ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
+                  className={`border rounded-md p-2 w-full ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none ${
+                    errors.username ? "border-red-500" : ""
+                  }`}
                 />
                 <div className="text-xs text-gray-500">
-                  {name.length}/50 ký tự
+                  {name.length}/15 ký tự
                 </div>
+                {errors.username && (
+                  <div className="text-xs text-red-500">
+                    Tên người dùng chỉ được chứa chữ cái, số và dấu gạch dưới
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1.5">
                 <Input
                   value={bio}
-                  onChange={(e) => setBio(e.target.value)}
+                  onChange={(e) => {
+                    setBio(e.target.value);
+                    if (errors.bio) {
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.bio;
+                        return newErrors;
+                      });
+                    }
+                  }}
                   placeholder="Tiểu sử"
-                  className="border rounded-md p-2 w-full ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
+                  className={`border rounded-md p-2 w-full ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none ${
+                    errors.bio ? "border-red-500" : ""
+                  }`}
                 />
                 <div className="text-xs text-gray-500">
-                  {bio.length}/160 ký tự
+                  {bio.length}/200 ký tự
                 </div>
+                {errors.bio && (
+                  <div className="text-xs text-red-500">{errors.bio.msg}</div>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -150,13 +299,33 @@ export default function ModalProfile({
               <div className="space-y-1.5">
                 <Input
                   value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
+                  onChange={(e) => {
+                    setWebsite(e.target.value);
+                    if (errors.website) {
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.website;
+                        return newErrors;
+                      });
+                    }
+                  }}
                   placeholder="Trang web"
-                  className="border rounded-md p-2 w-full ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
+                  className={`border rounded-md p-2 w-full ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none ${
+                    errors.website ? "border-red-500" : ""
+                  }`}
                 />
+                {errors.website && (
+                  <div className="text-xs text-red-500">
+                    {errors.website.msg}
+                  </div>
+                )}
               </div>
-              <button className="w-full p-3  bg-black text-white rounded-full font-bold hover:bg-gray-800">
-                Lưu
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="w-full p-3 bg-black text-white rounded-full font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Đang cập nhật..." : "Lưu"}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { TweetType } from "@/schemaValidations/tweet.schema";
 import { ENDPOINTS } from "@/constants/config";
+import { TabType } from "@/app/(pages)/home/_components/mainContent";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -10,7 +11,8 @@ interface ApiResponse<T> {
 const ITEMS_PER_PAGE = 10;
 
 export async function getTweets(
-  page: number = 1
+  page: number = 1,
+  tab: TabType = "for-you"
 ): Promise<ApiResponse<TweetType[]>> {
   const accessToken = localStorage.getItem("accessToken");
   if (!accessToken) {
@@ -22,12 +24,22 @@ export async function getTweets(
   }
 
   try {
+    const timestamp = Date.now();
+    const queryParams = new URLSearchParams({
+      limit: ITEMS_PER_PAGE.toString(),
+      page: page.toString(),
+      _: timestamp.toString(),
+      type: tab === "following" ? "following" : "all",
+    });
+
     const response = await fetch(
-      `${ENDPOINTS.TWEETS}?limit=${ITEMS_PER_PAGE}&page=${page}`,
+      `${ENDPOINTS.TWEETS}?${queryParams.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
+        cache: "no-store",
+        next: { revalidate: 0 },
       }
     );
     const data = await response.json();
@@ -145,7 +157,10 @@ export async function deleteTweet(tweetId: string): Promise<ApiResponse<void>> {
   }
 }
 
-export async function likeTweet(tweetId: string): Promise<ApiResponse<void>> {
+export async function likeTweet(
+  tweetId: string,
+  isLiked: boolean
+): Promise<ApiResponse<void>> {
   const accessToken = localStorage.getItem("accessToken");
   if (!accessToken) {
     return {
@@ -156,17 +171,25 @@ export async function likeTweet(tweetId: string): Promise<ApiResponse<void>> {
   }
 
   try {
-    const response = await fetch(`${ENDPOINTS.TWEETS}/${tweetId}/like`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await fetch(
+      isLiked ? `${ENDPOINTS.LIKE}/tweets/${tweetId}` : ENDPOINTS.LIKE,
+      {
+        method: isLiked ? "DELETE" : "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: !isLiked ? JSON.stringify({ tweet_id: tweetId }) : undefined,
+        cache: "no-store",
+      }
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "Failed to like tweet");
+      throw new Error(
+        data.message || `Failed to ${isLiked ? "unlike" : "like"} tweet`
+      );
     }
 
     return {
@@ -179,7 +202,7 @@ export async function likeTweet(tweetId: string): Promise<ApiResponse<void>> {
       message:
         error instanceof Error
           ? error.message
-          : "An error occurred while liking tweet",
+          : `An error occurred while ${isLiked ? "unliking" : "liking"} tweet`,
       data: undefined,
     };
   }

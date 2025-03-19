@@ -5,27 +5,52 @@ import Trending from "./Trending";
 import Feeds from "../../tweet/_components/Feeds";
 import { useTweet } from "@/context/TweetContext";
 import Post from "../../tweet/_components/button-post";
+import { useState } from "react";
+
+export type TabType = "for-you" | "following";
 
 export default function MainContent() {
-  const { tweets, loading, hasMore, loadMoreTweets } = useTweet();
+  const { tweets, loading, hasMore, loadMoreTweets, setActiveTab } = useTweet();
+  const [activeTab, setCurrentTab] = useState<TabType>("for-you");
+
+  const handleTabChange = (tab: TabType) => {
+    setCurrentTab(tab);
+    setActiveTab(tab);
+  };
 
   return (
     <div className="flex">
       {/* Main feed */}
       <div className="flex-1 min-h-screen border-x border-gray-200">
         {/* Header - Fixed at top */}
-        <div className="fixed top-0 z-50 bg-white/60 backdrop-blur w-[660px] border-x border-gray-200">
+        <div className="fixed top-0 z-50 bg-white/60 backdrop-blur w-[650px] border-x border-gray-200">
           <div className="flex h-14">
-            <div className="flex-1 flex items-center justify-center  hover:bg-gray-200/70 cursor-pointer transition-colors">
+            <div
+              onClick={() => handleTabChange("for-you")}
+              className={`flex-1 flex items-center justify-center hover:bg-gray-200/70 cursor-pointer transition-colors ${
+                activeTab === "for-you" ? "font-bold" : ""
+              }`}
+            >
               <span className="text-[15px] font-medium">Dành cho bạn</span>
             </div>
-            <div className="flex-1 flex items-center justify-center hover:bg-gray-200/70 cursor-pointer transition-colors">
+            <div
+              onClick={() => handleTabChange("following")}
+              className={`flex-1 flex items-center justify-center hover:bg-gray-200/70 cursor-pointer transition-colors ${
+                activeTab === "following" ? "font-bold" : ""
+              }`}
+            >
               <span className="text-[15px] font-medium text-gray-600">
                 Theo dõi
               </span>
             </div>
           </div>
-          <div className="h-1 w-1/2 bg-sky-500"></div>
+          <div
+            className={`h-1 bg-sky-500 transition-all duration-200 ${
+              activeTab === "for-you"
+                ? "w-1/2 translate-x-0"
+                : "w-1/2 translate-x-full"
+            }`}
+          ></div>
         </div>
         {/* Padding top để tránh content bị che bởi fixed header */}
         <div className="pt-[60px]">

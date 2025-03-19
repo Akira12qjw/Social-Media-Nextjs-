@@ -205,6 +205,9 @@ export default function MyProfile() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         profile={profile}
+        onProfileUpdate={(updatedProfile) => {
+          setProfile(updatedProfile);
+        }}
       />
     </div>
   );

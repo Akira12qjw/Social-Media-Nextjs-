@@ -2,6 +2,7 @@ export const API_URL = "http://localhost:4000";
 
 export const ENDPOINTS = {
   TWEETS: `${API_URL}/tweets`,
+  LIKE: `${API_URL}/likes`,
   USERS: {
     ME: `${API_URL}/users/me`,
     LOGIN: `${API_URL}/users/login`,

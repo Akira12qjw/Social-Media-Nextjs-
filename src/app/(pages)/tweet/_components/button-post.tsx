@@ -1,7 +1,6 @@
 "use client";
-import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import Avatar from "../../profile/_components/avatarProfile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogClose } from "@/components/ui/dialog";
@@ -20,6 +19,30 @@ export default function Post({ onPostSuccess }: PostProps) {
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const closeDialogRef = useRef<HTMLButtonElement>(null);
+
+  // Extract hashtags from content
+  const hashtags = useMemo(() => {
+    const hashtagRegex = /#[\p{L}\d]+/gu;
+    return Array.from(content.matchAll(hashtagRegex), (match) =>
+      match[0].slice(1)
+    );
+  }, [content]);
+
+  // Function to highlight hashtags in content
+  const renderContent = useMemo(() => {
+    if (!content) return "";
+    const parts = content.split(/(#[\p{L}\d]+)/gu);
+    return parts.map((part, index) => {
+      if (part.startsWith("#")) {
+        return (
+          <span key={index} className="text-blue-500">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  }, [content]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -130,7 +153,7 @@ export default function Post({ onPostSuccess }: PostProps) {
         audience: 0,
         content: content.trim() || "",
         parent_id: null,
-        hashtags: [],
+        hashtags: hashtags,
         mentions: [],
         medias: mediaUrls,
         guest_views: 0,
@@ -181,12 +204,29 @@ export default function Post({ onPostSuccess }: PostProps) {
           </Link>
         </div>
         <div className="flex-grow">
-          <Input
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Chuyện gì đang xảy ra ?!"
-            className="border-0 text-xl placeholder:text-gray-500 focus-visible:ring-0 px-0 py-[2px]"
-          />
+          <div className="relative">
+            <div
+              className="border-0 text-xl focus-visible:ring-0 px-0 py-[2px] min-h-[40px] outline-none"
+              contentEditable
+              onInput={(e) => setContent(e.currentTarget.textContent || "")}
+              data-placeholder="Chuyện gì đang xảy ra ?!"
+              dangerouslySetInnerHTML={{ __html: renderContent }}
+            />
+            {!content && (
+              <span className="absolute top-0 left-0 text-gray-500 text-xl pointer-events-none">
+                Chuyện gì đang xảy ra ?!
+              </span>
+            )}
+          </div>
+          {hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {hashtags.map((tag, index) => (
+                <span key={index} className="text-blue-500 text-sm">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex  gap-2 mt-4">
             {mediaFiles.map((file, index) => (
               <div

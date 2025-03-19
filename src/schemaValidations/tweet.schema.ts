@@ -39,6 +39,7 @@ export const tweetSchema = z.object({
   retweet_count: z.number(),
   comment_count: z.number(),
   quote_count: z.number(),
+  is_liked: z.boolean().optional(),
 });
 
 export const tweetListSchema = z.object({

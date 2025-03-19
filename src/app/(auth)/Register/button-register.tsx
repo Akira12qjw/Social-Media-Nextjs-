@@ -17,8 +17,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import DatePicker from "./_components/DatePicker";
 import { formSchemaRegister } from "@/schemaValidations/auth.schema";
 import PasswordInput from "../../../components/PasswordInput";
-import { toast } from "sonner";
+
 import { debounce } from "lodash";
+import { toast } from "sonner";
 
 type FormData = z.infer<typeof formSchemaRegister>;
 

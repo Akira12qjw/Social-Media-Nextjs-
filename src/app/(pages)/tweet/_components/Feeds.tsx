@@ -1,13 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { TweetType } from "@/schemaValidations/tweet.schema";
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
 import SelectedTweet from "./selectedTweet";
 import MediaGrid from "./renderMediaGrid";
-
+import { likeTweet } from "@/services/tweet.service";
+import { toast } from "sonner";
+import { formatTimeFromNow } from "@/utils/formatTimeFromNow";
+import { motion } from "framer-motion";
 interface FeedsProps {
   tweetData: TweetType[];
   loading: boolean;
@@ -25,6 +25,69 @@ export default function Feeds({
   const loadingRef = useRef<HTMLDivElement>(null);
   const [selectedTweet, setSelectedTweet] = useState<TweetType | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [likedTweets, setLikedTweets] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+  const [likeCounts, setLikeCounts] = useState<{ [key: string]: number }>({});
+  const [loadingLikes, setLoadingLikes] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+
+  useEffect(() => {
+    // Initialize like counts and states from tweet data
+    const initialLikeCounts = tweetData.reduce((acc, tweet) => {
+      acc[tweet._id] = tweet.likes || 0;
+      return acc;
+    }, {} as { [key: string]: number });
+
+    const initialLikedStates = tweetData.reduce((acc, tweet) => {
+      // Assuming the API returns an 'is_liked' field in the tweet object
+      acc[tweet._id] = tweet.is_liked || false;
+      return acc;
+    }, {} as { [key: string]: boolean });
+
+    setLikeCounts(initialLikeCounts);
+    setLikedTweets(initialLikedStates);
+  }, [tweetData]);
+
+  const handleLike = async (tweetId: string) => {
+    if (loadingLikes[tweetId]) return;
+
+    const isCurrentlyLiked = likedTweets[tweetId];
+    setLoadingLikes((prev) => ({ ...prev, [tweetId]: true }));
+
+    try {
+      // Optimistic update
+      setLikedTweets((prev) => ({ ...prev, [tweetId]: !isCurrentlyLiked }));
+      setLikeCounts((prev) => ({
+        ...prev,
+        [tweetId]: prev[tweetId] + (isCurrentlyLiked ? -1 : 1),
+      }));
+
+      const response = await likeTweet(tweetId, isCurrentlyLiked);
+
+      if (!response.success) {
+        // Revert changes if request fails
+        setLikedTweets((prev) => ({ ...prev, [tweetId]: isCurrentlyLiked }));
+        setLikeCounts((prev) => ({
+          ...prev,
+          [tweetId]: prev[tweetId] + (isCurrentlyLiked ? 1 : -1),
+        }));
+        toast.error(response.message || "Không thể thực hiện thao tác");
+      }
+    } catch {
+      // Revert changes if request fails
+      setLikedTweets((prev) => ({ ...prev, [tweetId]: isCurrentlyLiked }));
+      setLikeCounts((prev) => ({
+        ...prev,
+        [tweetId]: prev[tweetId] + (isCurrentlyLiked ? 1 : -1),
+      }));
+      toast.error("Đã xảy ra lỗi khi thực hiện thao tác");
+    } finally {
+      setLoadingLikes((prev) => ({ ...prev, [tweetId]: false }));
+    }
+  };
+
   useEffect(() => {
     const options = {
       root: null,
@@ -82,24 +145,13 @@ export default function Feeds({
       setCurrentImageIndex(currentImageIndex - 1);
     }
   };
-
-  const formatTimeFromNow = (createdAt: string) => {
-    const createdTime = new Date(createdAt).getTime();
-    const now = Date.now();
-    const diffMs = now - createdTime;
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
-    if (diffHours < 24) {
-      return `${diffHours} giờ trước`;
-    } else {
-      const diffDays = Math.floor(diffHours / 24);
-      return `${diffDays} ngày trước`;
-    }
-  };
   return (
     <div>
-      {tweetData.map((tweet) => (
-        <div key={tweet._id} className="p-4 border-b border-gray-200">
+      {tweetData.map((tweet, index) => (
+        <div
+          key={`${tweet._id}-${index}`}
+          className="p-4 border-b border-gray-200 w-[650px]"
+        >
           <div className="flex space-x-3">
             <div className="flex-shrink-0">
               <Image
@@ -178,21 +230,44 @@ export default function Feeds({
                   </svg>
                   <span>{tweet.retweet_count || 0}</span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="w-5 h-5"
+                <div
+                  className={`flex items-center space-x-1 cursor-pointer group ${
+                    likedTweets[tweet._id]
+                      ? "text-[#f91880]"
+                      : "hover:text-[#f91880]"
+                  }`}
+                  onClick={() => handleLike(tweet._id)}
+                >
+                  <motion.div
+                    key={likedTweets[tweet._id] ? "liked" : "not-liked"} // để animation re-trigger
+                    animate={{
+                      scale: likedTweets[tweet._id] ? [1, 1.3, 1] : 1,
+                    }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <g>
-                      <path
-                        fill="currentColor"
-                        d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"
-                      />
-                    </g>
-                  </svg>
-                  <span>{tweet.likes || 0}</span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="w-5 h-5"
+                    >
+                      <g>
+                        <path
+                          fill={likedTweets[tweet._id] ? "#f91880" : "none"}
+                          stroke="#f91880"
+                          strokeWidth="1.5"
+                          d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91z"
+                        />
+                      </g>
+                    </svg>
+                  </motion.div>
+
+                  <span
+                    className={likedTweets[tweet._id] ? "text-[#f91880]" : ""}
+                  >
+                    {likeCounts[tweet._id] || 0}
+                  </span>
                 </div>
+
                 <div className="flex items-center space-x-1">
                   <svg
                     viewBox="0 0 24 24"

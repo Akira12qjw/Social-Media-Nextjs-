@@ -1,7 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { TweetType } from "@/schemaValidations/tweet.schema";
 import { getTweets } from "@/services/tweet.service";
+import { TabType } from "@/app/(pages)/home/_components/mainContent";
 
 interface TweetContextType {
   tweets: TweetType[];
@@ -10,6 +13,7 @@ interface TweetContextType {
   error: string | null;
   refreshTweets: () => Promise<void>;
   loadMoreTweets: () => Promise<void>;
+  setActiveTab: (tab: TabType) => void;
 }
 
 const TweetContext = createContext<TweetContextType | undefined>(undefined);
@@ -20,12 +24,13 @@ export function TweetProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>("for-you");
 
   const fetchTweets = async (pageNumber: number, append: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getTweets(pageNumber);
+      const response = await getTweets(pageNumber, activeTab);
 
       if (response.success) {
         const newTweets = response.data;
@@ -39,8 +44,7 @@ export function TweetProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(response.message || "Failed to fetch tweets");
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch (error) {
       setError("An error occurred while fetching tweets");
     } finally {
       setLoading(false);
@@ -60,6 +64,12 @@ export function TweetProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleSetActiveTab = (tab: TabType) => {
+    setActiveTab(tab);
+    setPage(1);
+    fetchTweets(1, false);
+  };
+
   useEffect(() => {
     fetchTweets(1, false);
   }, []);
@@ -71,6 +81,7 @@ export function TweetProvider({ children }: { children: React.ReactNode }) {
     error,
     refreshTweets,
     loadMoreTweets,
+    setActiveTab: handleSetActiveTab,
   };
 
   return (
