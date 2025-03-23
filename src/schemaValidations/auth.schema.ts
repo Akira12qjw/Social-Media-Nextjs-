@@ -9,7 +9,7 @@ export const formSchemaRegister = z
       .string()
       .min(6, "Nhập  6-50 ký tự")
       .max(50, "Nhập  6-50 ký tự"),
-    date_of_birth: z.date(),
+    date_of_birth: z.string(),
   })
   .superRefine(({ confirm_password, password }, ctx) => {
     if (confirm_password !== password) {

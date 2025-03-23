@@ -1,33 +1,69 @@
-import { AccountType } from "@/schemaValidations/account.schema";
 import { ENDPOINTS } from "@/constants/config";
+import { AccountType } from "@/schemaValidations/account.schema";
+
+const getAccessToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("accessToken");
+  }
+  return null;
+};
+
+const createApiClient = () => {
+  const accessToken = getAccessToken();
+  if (!accessToken) {
+    throw new Error("No access token found");
+  }
+
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+};
+
+const handleApiResponse = async (response: Response) => {
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "API request failed");
+  }
+  return data;
+};
+
+interface ValidationError {
+  type: string;
+  value: string;
+  msg: string;
+  path: string;
+  location: string;
+}
+
+interface ValidationErrors {
+  [key: string]: ValidationError;
+}
 
 interface ApiResponse<T> {
   success: boolean;
+  data?: T;
   message?: string;
-  data: T;
+  errors?: ValidationErrors;
 }
 
-export async function getProfile(): Promise<ApiResponse<AccountType>> {
-  const accessToken = localStorage.getItem("accessToken");
-  if (!accessToken) {
-    return {
-      success: false,
-      message: "No access token found",
-      data: {} as AccountType,
-    };
-  }
-
+export const getProfile = async (
+  username?: string
+): Promise<{
+  success: boolean;
+  data?: AccountType;
+  message?: string;
+}> => {
   try {
-    const response = await fetch(ENDPOINTS.USERS.ME, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    const data = await response.json();
+    const apiClient = createApiClient();
+    const endpoint = username
+      ? `${ENDPOINTS.USERS.ME}/${username}`
+      : `${ENDPOINTS.USERS.ME}`;
 
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch profile");
-    }
+    const response = await fetch(endpoint, { headers: apiClient.headers });
+    const data = await handleApiResponse(response);
 
     return {
       success: true,
@@ -37,39 +73,29 @@ export async function getProfile(): Promise<ApiResponse<AccountType>> {
     return {
       success: false,
       message:
-        error instanceof Error
-          ? error.message
-          : "An error occurred while fetching profile",
-      data: {} as AccountType,
+        error instanceof Error ? error.message : "Failed to fetch profile",
     };
   }
-}
+};
 
-export async function updateProfile(
-  profileData: Partial<AccountType>
-): Promise<ApiResponse<AccountType>> {
-  const accessToken = localStorage.getItem("accessToken");
-  if (!accessToken) {
-    return {
-      success: false,
-      message: "No access token found",
-      data: {} as AccountType,
-    };
-  }
-
+export const updateProfile = async (
+  profileData: AccountType
+): Promise<ApiResponse<AccountType>> => {
   try {
-    const response = await fetch(ENDPOINTS.USERS.ME, {
+    const apiClient = createApiClient();
+    const response = await fetch(`${ENDPOINTS.USERS.ME}`, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: apiClient.headers,
       body: JSON.stringify(profileData),
     });
-    const data = await response.json();
 
+    const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.message || "Failed to update profile");
+      return {
+        success: false,
+        message: data.message || "API request failed",
+        errors: data.errors,
+      };
     }
 
     return {
@@ -80,10 +106,60 @@ export async function updateProfile(
     return {
       success: false,
       message:
-        error instanceof Error
-          ? error.message
-          : "An error occurred while updating profile",
-      data: {} as AccountType,
+        error instanceof Error ? error.message : "Failed to update profile",
     };
   }
-}
+};
+
+export const followUser = async (
+  userId: string
+): Promise<{
+  success: boolean;
+  message?: string;
+}> => {
+  try {
+    const apiClient = createApiClient();
+    const response = await fetch(`${ENDPOINTS.USERS.FOLLOW}/${userId}`, {
+      method: "POST",
+      headers: apiClient.headers,
+    });
+
+    await handleApiResponse(response);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to follow user",
+    };
+  }
+};
+
+export const unfollowUser = async (
+  userId: string
+): Promise<{
+  success: boolean;
+  message?: string;
+}> => {
+  try {
+    const apiClient = createApiClient();
+    const response = await fetch(`${ENDPOINTS.USERS.FOLLOW}/${userId}`, {
+      method: "POST",
+      headers: apiClient.headers,
+    });
+
+    await handleApiResponse(response);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Failed to unfollow user",
+    };
+  }
+};

@@ -29,8 +29,11 @@ import {
 
 import AvatarProfile from "../../profile/_components/avatarProfile";
 import ModalPost from "./modalPost";
+import { usePathname } from "next/navigation";
 
 export default function SideBar() {
+  const pathname = usePathname();
+
   return (
     <Sidebar>
       <SidebarContent className="bg-white pt-2">
@@ -48,9 +51,13 @@ export default function SideBar() {
                 <NavigationMenuItem className="p-3">
                   <Link href="/home" legacyBehavior passHref>
                     <NavigationMenuLink
-                      className={navigationMenuTriggerStyle()}
+                      className={`${navigationMenuTriggerStyle()} ${
+                        pathname === "/home"
+                          ? "font-extrabold text-black"
+                          : "text-gray-400"
+                      }`}
                     >
-                      <IconHome />{" "}
+                      <IconHome />
                       <span className="pl-6 text-lg">Trang chủ</span>
                     </NavigationMenuLink>
                   </Link>
@@ -58,9 +65,13 @@ export default function SideBar() {
                 <NavigationMenuItem className="p-3">
                   <Link href="/explore" legacyBehavior passHref>
                     <NavigationMenuLink
-                      className={navigationMenuTriggerStyle()}
+                      className={`${navigationMenuTriggerStyle()} ${
+                        pathname === "/explore"
+                          ? "font-extrabold text-black"
+                          : "text-gray-400"
+                      }`}
                     >
-                      <IconSearch />{" "}
+                      <IconSearch />
                       <span className="pl-6 text-lg">Tìm kiếm</span>
                     </NavigationMenuLink>
                   </Link>
@@ -68,9 +79,13 @@ export default function SideBar() {
                 <NavigationMenuItem className="p-3">
                   <Link href="/profile" legacyBehavior passHref>
                     <NavigationMenuLink
-                      className={navigationMenuTriggerStyle()}
+                      className={`${navigationMenuTriggerStyle()} ${
+                        pathname === "/profile"
+                          ? "font-extrabold text-black"
+                          : "text-gray-400"
+                      }`}
                     >
-                      <IconProfile />{" "}
+                      <IconProfile />
                       <span className="ml-5 text-lg">Trang cá nhân</span>
                     </NavigationMenuLink>
                   </Link>

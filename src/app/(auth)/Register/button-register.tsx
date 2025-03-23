@@ -2,32 +2,27 @@
 "use client";
 import React, { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import DatePicker from "./_components/DatePicker";
 import { formSchemaRegister } from "@/schemaValidations/auth.schema";
-import PasswordInput from "../../../components/PasswordInput";
-
 import { debounce } from "lodash";
 import { toast } from "sonner";
+import RegisterFormModal from "./_components/RegisterFormModal";
 
 type FormData = z.infer<typeof formSchemaRegister>;
+
+interface DateOfBirth {
+  day: string;
+  month: string;
+  year: string;
+}
 
 export default function ButtonRegister() {
   const [isFormRegister, setIsFormRegister] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState({
+  const [dateOfBirth, setDateOfBirth] = useState<DateOfBirth>({
     day: "",
     month: "",
     year: "",
@@ -41,6 +36,7 @@ export default function ButtonRegister() {
       password: "",
       confirm_password: "",
     },
+    mode: "onSubmit",
   });
 
   const handleDateChange = useCallback(
@@ -74,63 +70,96 @@ export default function ButtonRegister() {
       throw new Error("Bạn phải từ 13 tuổi trở lên");
     }
 
-    return true;
+    return date;
   }, [dateOfBirth]);
 
   const formatDate = useMemo(
     () =>
-      (date: typeof dateOfBirth): string => {
+      (date: DateOfBirth): string => {
         const { year, month, day } = date;
         const formattedMonth = month.padStart(2, "0");
         const formattedDay = day.padStart(2, "0");
-
         return `${year}-${formattedMonth}-${formattedDay}`;
       },
     []
   );
 
-  const onSubmit = async (data: FormData) => {
-    try {
-      setIsLoading(true);
-      setError("");
+  const handleClose = useCallback(() => {
+    setIsFormRegister(false);
+    form.reset();
+    setDateOfBirth({ day: "", month: "", year: "" });
+    setError("");
+  }, [form]);
 
-      // Validate date of birth
-      validateDateOfBirth();
+  const onSubmit = useCallback(
+    async (data: FormData) => {
+      console.log("Form submitted with data:", data);
+      try {
+        setIsLoading(true);
+        setError("");
 
-      const formattedDate = formatDate(dateOfBirth);
+        let birthDate;
+        try {
+          birthDate = validateDateOfBirth();
+          console.log("Birth date validated:", birthDate);
+        } catch (error) {
+          if (error instanceof Error) {
+            setError(error.message);
+            setIsLoading(false);
+            return;
+          }
+        }
 
-      const response = await fetch("http://localhost:4000/users/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          confirm_password: data.confirm_password,
+        if (!birthDate) {
+          setError("Ngày sinh không hợp lệ");
+          setIsLoading(false);
+          return;
+        }
+
+        const formattedDate = formatDate(dateOfBirth);
+        console.log("Formatted date:", formattedDate);
+
+        const requestData = {
+          ...data,
           date_of_birth: formattedDate,
-        }),
-      });
-      console.log("response", response);
-      console.log("formattedDate ", formattedDate);
-      const responseData = await response.json();
-      console.log("responseData", responseData);
-      if (!response.ok) {
-        throw new Error(responseData.errors.email.msg || "Đăng ký thất bại");
-      }
+        };
 
-      setIsFormRegister(false);
-      form.reset();
-      setDateOfBirth({ day: "", month: "", year: "" });
-      toast.success("Đăng ký thành công. Vui lòng đăng nhập !");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Đã xảy ra lỗi");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        console.log("Sending request with data:", requestData);
+
+        const response = await fetch("http://localhost:4000/users/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(requestData),
+        });
+
+        const responseData = await response.json();
+        console.log("Response from server:", responseData);
+
+        if (!response.ok) {
+          if (responseData.errors?.email?.msg) {
+            setError(responseData.errors.email.msg);
+          } else if (responseData.message) {
+            setError(responseData.message);
+          } else {
+            setError("Đăng ký thất bại");
+          }
+          return;
+        }
+
+        handleClose();
+        toast.success("Đăng ký thành công. Vui lòng đăng nhập !");
+      } catch (error) {
+        console.error("Registration error:", error);
+        setError(error instanceof Error ? error.message : "Đã xảy ra lỗi");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [dateOfBirth, formatDate, handleClose, validateDateOfBirth]
+  );
 
   return (
     <div className="w-full">
@@ -142,118 +171,14 @@ export default function ButtonRegister() {
       </Button>
 
       {isFormRegister && (
-        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md p-5 my-4">
-            <div className="flex justify-between items-center mb-2">
-              <button
-                onClick={() => setIsFormRegister(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
-              >
-                <span>✕</span>
-              </button>
-              <div>
-                <svg viewBox="0 0 24 24" className="w-8 h-8">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </div>
-              <div className="w-8" />
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-100 text-red-600 rounded-lg">
-                {error}
-              </div>
-            )}
-
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-3 max-h-[calc(100vh-10rem)] overflow-y-auto pr-2"
-              >
-                <h1 className="font-bold text-2xl">Tạo tài khoản của bạn</h1>
-
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tên tài khoản</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Nhập tên tài khoản"
-                          {...field}
-                          autoComplete="username"
-                          className="ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Nhập email"
-                          autoComplete="email"
-                          className="ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <PasswordInput
-                      form={form}
-                      field={field}
-                      name="password"
-                      label="Nhập mật khẩu"
-                      placeholder="Nhập mật khẩu"
-                    />
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="confirm_password"
-                  render={({ field }) => (
-                    <PasswordInput
-                      form={form}
-                      field={field}
-                      name="confirm_password"
-                      label="Nhập lại mật khẩu"
-                      placeholder="Nhập lại mật khẩu"
-                    />
-                  )}
-                />
-
-                <div>
-                  <span className="block">Ngày sinh</span>
-                  <DatePicker onDateChange={handleDateChange} />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full rounded-full font-bold hover:bg-slate-700 mt-5"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Đang đăng ký..." : "Đăng ký"}
-                </Button>
-              </form>
-            </Form>
-          </div>
-        </div>
+        <RegisterFormModal
+          form={form}
+          onSubmit={onSubmit}
+          onClose={handleClose}
+          isLoading={isLoading}
+          error={error}
+          handleDateChange={handleDateChange}
+        />
       )}
     </div>
   );

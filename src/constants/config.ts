@@ -7,6 +7,7 @@ export const ENDPOINTS = {
     ME: `${API_URL}/users/me`,
     LOGIN: `${API_URL}/users/login`,
     REGISTER: `${API_URL}/users/register`,
+    LOGOUT: `${API_URL}/users/logout`,
     FOLLOW: `${API_URL}/users/follow`,
     UNFOLLOW: (userId: string) => `${API_URL}/users/follow/${userId}`,
   },

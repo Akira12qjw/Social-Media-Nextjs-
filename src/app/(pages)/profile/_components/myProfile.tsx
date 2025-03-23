@@ -8,8 +8,8 @@ import React, { useEffect, useState } from "react";
 import ModalProfile from "./modalProfile";
 import Trending from "../../home/_components/Trending";
 import SuggestFollow from "../../home/_components/suggestFollow";
-import { toast } from "sonner";
 import { getProfile } from "@/services/profile.service";
+import { toast } from "sonner";
 
 export default function MyProfile() {
   const [profile, setProfile] = useState<AccountType | null>(null);
@@ -21,7 +21,7 @@ export default function MyProfile() {
       try {
         setIsLoading(true);
         const response = await getProfile();
-        if (response.success) {
+        if (response.success && response.data) {
           setProfile(response.data);
         } else {
           toast.error(response.message);
@@ -114,6 +114,7 @@ export default function MyProfile() {
           <span className="text-gray-500 text-base">
             @{profile.email?.split("@")[0]}
           </span>
+          <div className="text-gray-500 text-base">{profile.bio}</div>
           <div className="flex mt-2">
             <span className="flex items-center text-gray-500 text-base mr-3">
               {profile.location && (
