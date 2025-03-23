@@ -23,6 +23,16 @@ const nextConfig: NextConfig = {
         hostname: "github.com",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "loremflickr.com",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+        pathname: "**",
+      },
     ],
   },
   experimental: {

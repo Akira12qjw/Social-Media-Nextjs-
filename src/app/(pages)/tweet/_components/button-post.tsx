@@ -1,12 +1,11 @@
 "use client";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import Avatar from "../../profile/_components/avatarProfile";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogClose } from "@/components/ui/dialog";
-
+import { toast } from "sonner";
+import Link from "next/link";
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 interface PostProps {
@@ -16,18 +15,39 @@ interface PostProps {
 export default function Post({ onPostSuccess }: PostProps) {
   const accessToken = localStorage.getItem("accessToken");
   const [content, setContent] = useState("");
-  const { toast } = useToast();
+
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const closeDialogRef = useRef<HTMLButtonElement>(null);
 
+  // Extract hashtags from content
+  const hashtags = useMemo(() => {
+    const hashtagRegex = /#[\p{L}\d]+/gu;
+    return Array.from(content.matchAll(hashtagRegex), (match) =>
+      match[0].slice(1)
+    );
+  }, [content]);
+
+  // Function to highlight hashtags in content
+  const renderContent = useMemo(() => {
+    if (!content) return "";
+    const parts = content.split(/(#[\p{L}\d]+)/gu);
+    return parts.map((part, index) => {
+      if (part.startsWith("#")) {
+        return (
+          <span key={index} className="text-blue-500">
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  }, [content]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (mediaFiles.length + files.length > 4) {
-      toast({
-        title: "Vượt quá giới hạn",
-        description: "Chỉ được đăng tối đa 4 hình ảnh hoặc video",
-      });
+      toast.error("Vượt quá giới hạn");
       return;
     }
 
@@ -58,11 +78,9 @@ export default function Post({ onPostSuccess }: PostProps) {
     });
 
     if (validFiles.length !== files.length) {
-      toast({
-        title: "Một số file không hợp lệ",
-        description:
-          "Chỉ chấp nhận ảnh (JPG, PNG, GIF, WEBP < 5MB) hoặc video (MP4, WEBM, MOV < 100MB)",
-      });
+      toast.error(
+        "Chỉ chấp nhận ảnh (JPG, PNG, GIF, WEBP < 5MB) hoặc video (MP4, WEBM, MOV < 100MB)"
+      );
     }
 
     const newFiles = [...mediaFiles, ...validFiles].slice(0, 4);
@@ -105,10 +123,7 @@ export default function Post({ onPostSuccess }: PostProps) {
         uploadedMedia.push(mediaObject);
       } catch (error) {
         console.error("Error uploading media:", error);
-        toast({
-          title: `Lỗi upload ${isImage ? "ảnh" : "video"}`,
-          description: (error as Error).message,
-        });
+        toast.error(`Lỗi upload ${isImage ? "ảnh" : "video"}`);
         throw error;
       }
     }
@@ -119,16 +134,12 @@ export default function Post({ onPostSuccess }: PostProps) {
     e.preventDefault();
 
     if (!content.trim()) {
-      toast({
-        title: "Vui lòng nhập nội dung bài viết!",
-      });
+      toast.error("Vui lòng nhập nội dung bài viết!");
       return;
     }
 
     if (!accessToken) {
-      toast({
-        title: "Bạn chưa đăng nhập",
-      });
+      toast.error("Bạn chưa đăng nhập");
       return;
     }
 
@@ -142,7 +153,7 @@ export default function Post({ onPostSuccess }: PostProps) {
         audience: 0,
         content: content.trim() || "",
         parent_id: null,
-        hashtags: [],
+        hashtags: hashtags,
         mentions: [],
         medias: mediaUrls,
         guest_views: 0,
@@ -170,18 +181,13 @@ export default function Post({ onPostSuccess }: PostProps) {
 
       setContent("");
       setMediaFiles([]);
-      toast({
-        title: "Đăng bài viết thành công!",
-      });
+      toast.success("Đăng bài viết thành công!");
 
       // Call the callback function if provided
       onPostSuccess?.();
     } catch (error) {
       console.error("Lỗi:", error);
-      toast({
-        title: "Lỗi",
-        description: (error as Error).message,
-      });
+      toast.error((error as Error).message);
     } finally {
       setIsUploading(false);
     }
@@ -193,15 +199,34 @@ export default function Post({ onPostSuccess }: PostProps) {
         <SidebarTrigger className="md:hidden" />
 
         <div className="flex-shrink-0 mr-4">
-          <Avatar />
+          <Link href="/profile">
+            <Avatar />
+          </Link>
         </div>
         <div className="flex-grow">
-          <Input
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Chuyện gì đang xảy ra ?!"
-            className="border-0 text-xl placeholder:text-gray-500 focus-visible:ring-0 px-0 py-[2px]"
-          />
+          <div className="relative">
+            <div
+              className="border-0 text-xl focus-visible:ring-0 px-0 py-[2px] min-h-[40px] outline-none"
+              contentEditable
+              onInput={(e) => setContent(e.currentTarget.textContent || "")}
+              data-placeholder="Chuyện gì đang xảy ra ?!"
+              dangerouslySetInnerHTML={{ __html: renderContent }}
+            />
+            {!content && (
+              <span className="absolute top-0 left-0 text-gray-500 text-xl pointer-events-none">
+                Chuyện gì đang xảy ra ?!
+              </span>
+            )}
+          </div>
+          {hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {hashtags.map((tag, index) => (
+                <span key={index} className="text-blue-500 text-sm">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex  gap-2 mt-4">
             {mediaFiles.map((file, index) => (
               <div

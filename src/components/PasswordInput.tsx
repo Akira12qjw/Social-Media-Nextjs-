@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import {
   FormControl,
@@ -56,6 +57,7 @@ export default function PasswordInput({
                 placeholder={placeholder}
                 {...field}
                 autoComplete={getAutoCompleteValue()}
+                className="ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
               />
             </FormControl>
             <button
