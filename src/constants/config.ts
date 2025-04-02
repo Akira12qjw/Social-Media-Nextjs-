@@ -10,6 +10,7 @@ export const ENDPOINTS = {
     LOGOUT: `${API_URL}/users/logout`,
     FOLLOW: `${API_URL}/users/follow`,
     UNFOLLOW: (userId: string) => `${API_URL}/users/follow/${userId}`,
+    GET_FOLLOWING: `${API_URL}/users/following`,
   },
   MEDIAS: {
     UPLOAD_IMAGE: `${API_URL}/medias/upload-image`,
