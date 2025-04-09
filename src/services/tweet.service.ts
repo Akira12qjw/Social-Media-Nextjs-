@@ -8,7 +8,7 @@ interface ApiResponse<T> {
   data: T;
 }
 
-const ITEMS_PER_PAGE = 10;
+export const ITEMS_PER_PAGE = 10;
 
 export async function getTweets(
   page: number = 1,

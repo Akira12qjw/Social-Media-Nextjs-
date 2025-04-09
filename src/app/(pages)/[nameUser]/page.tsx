@@ -1,14 +1,15 @@
-import SideBar from "@/app/(pages)/home/_components/SideBar";
 import AuthWrapper from "@/utils/AuthWrapper";
 import React from "react";
-import Explore from "./_components/Explore";
+import SideBar from "../home/_components/SideBar";
+
+import ProfileDetailOther from "../profile/_components/profileDetailOther";
 
 export default function page() {
   return (
     <div className="h-screen flex">
       <AuthWrapper>
         <SideBar />
-        <Explore />
+        <ProfileDetailOther />
       </AuthWrapper>
     </div>
   );

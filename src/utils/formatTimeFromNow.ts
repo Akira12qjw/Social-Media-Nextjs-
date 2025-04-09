@@ -1,20 +1,9 @@
-export const formatTimeFromNow = (createdAt: string) => {
-  const createdTime = new Date(createdAt).getTime();
-  const now = new Date().getTime();
-  const diffMs = now - createdTime;
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
 
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffSeconds < 60) {
-    return `${diffSeconds} giây trước`;
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes} phút trước`;
-  } else if (diffHours < 24) {
-    return `${diffHours} giờ trước`;
-  } else {
-    return `${diffDays} ngày trước`;
-  }
+export const formatTimeFromNow = (date: string) => {
+  return formatDistanceToNow(new Date(date), {
+    addSuffix: true,
+    locale: vi,
+  });
 };

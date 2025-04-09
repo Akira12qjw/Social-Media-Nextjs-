@@ -30,6 +30,7 @@ import {
 import AvatarProfile from "../../profile/_components/avatarProfile";
 import ModalPost from "./modalPost";
 import { usePathname } from "next/navigation";
+import IconMessage from "@/components/icons/icon-Message";
 
 export default function SideBar() {
   const pathname = usePathname();
@@ -73,6 +74,20 @@ export default function SideBar() {
                     >
                       <IconSearch />
                       <span className="pl-6 text-lg">Tìm kiếm</span>
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+                <NavigationMenuItem className="p-3">
+                  <Link href="/chat" legacyBehavior passHref>
+                    <NavigationMenuLink
+                      className={`${navigationMenuTriggerStyle()} ${
+                        pathname === "/chat"
+                          ? "font-extrabold text-black"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      <IconMessage />
+                      <span className="pl-6 text-lg">Nhắn tin</span>
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>

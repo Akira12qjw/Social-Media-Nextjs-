@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { Button } from "@/components/ui/button";
 import { useTweet } from "@/context/TweetContext";
@@ -7,13 +8,24 @@ import React from "react";
 export default function Trending() {
   const { tweets: tweetData } = useTweet();
 
-  // Filter tweets that have hashtags and more than 500 views
-  const trendingTweets = tweetData.filter(
-    (tweet) =>
-      tweet.hashtags && tweet.hashtags.length > 0 && tweet.user_views > 100
-  );
+  const hashtagViews = new Map();
 
-  if (trendingTweets.length === 0) {
+  tweetData.forEach((tweet) => {
+    if (tweet.hashtags && tweet.hashtags.length > 0) {
+      tweet.hashtags.forEach((tag) => {
+        const views = hashtagViews.get(tag.name) || 0;
+        hashtagViews.set(tag.name, views + (tweet.user_views || 0));
+      });
+    }
+  });
+
+  const trendingHashtags = Array.from(hashtagViews.entries())
+    .filter(([_, views]) => views >= 110)
+    .sort(([_, a], [__, b]) => b - a)
+    .slice(0, 3)
+    .map(([name, views]) => ({ name, views }));
+
+  if (trendingHashtags.length === 0) {
     return null;
   }
 
@@ -27,19 +39,14 @@ export default function Trending() {
           <div className="flex items-center text-sm text-gray-500">
             <span>Đang thịnh hành</span>
           </div>
-          {trendingTweets.map((topic, index) => (
+          {trendingHashtags.map((hashtag, index) => (
             <div key={index} className="py-1">
               <div>
                 <div className="flex justify-between">
                   <div>
-                    <div className="font-bold text-base">
-                      {topic.hashtags
-                        .slice(0, 2)
-                        .map((tag) => `#${tag.name}`)
-                        .join(" ")}
-                    </div>
+                    <div className="font-bold text-base">#{hashtag.name}</div>
                     <p className="text-gray-400 text-sm mt-1">
-                      {topic.user_views || 0} views
+                      {hashtag.views} views
                     </p>
                   </div>
                   <Button
