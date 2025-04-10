@@ -62,9 +62,14 @@ export const getProfile = async (
       ? `${ENDPOINTS.USERS.ME}/${username}`
       : `${ENDPOINTS.USERS.ME}`;
 
-    const response = await fetch(endpoint, { headers: apiClient.headers });
+    const response = await fetch(endpoint, {
+      headers: apiClient.headers,
+    });
+
     const data = await handleApiResponse(response);
 
+    // console.log("getProfile", JSON.stringify(data.result));
+    localStorage.setItem("profile", JSON.stringify(data.result));
     return {
       success: true,
       data: data.result,
@@ -111,6 +116,33 @@ export const updateProfile = async (
   }
 };
 
+export const getProfileUser = async (
+  username?: string
+): Promise<{
+  success: boolean;
+  data?: AccountType;
+  message?: string;
+}> => {
+  try {
+    const apiClient = createApiClient();
+    const endpoint = `${ENDPOINTS.USERS.GET_USER}/${username}`;
+
+    const response = await fetch(endpoint, { headers: apiClient.headers });
+    const data = await handleApiResponse(response);
+
+    return {
+      success: true,
+      data: data.result,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Failed to fetch profile user",
+    };
+  }
+};
+
 export const followUser = async (
   userId: string
 ): Promise<{
@@ -119,9 +151,15 @@ export const followUser = async (
 }> => {
   try {
     const apiClient = createApiClient();
-    const response = await fetch(`${ENDPOINTS.USERS.FOLLOW}/${userId}`, {
+    const response = await fetch(ENDPOINTS.USERS.FOLLOW, {
       method: "POST",
-      headers: apiClient.headers,
+      headers: {
+        ...apiClient.headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        followed_user_id: userId,
+      }),
     });
 
     await handleApiResponse(response);
@@ -146,7 +184,7 @@ export const unfollowUser = async (
   try {
     const apiClient = createApiClient();
     const response = await fetch(`${ENDPOINTS.USERS.FOLLOW}/${userId}`, {
-      method: "POST",
+      method: "DELETE",
       headers: apiClient.headers,
     });
 
@@ -160,6 +198,34 @@ export const unfollowUser = async (
       success: false,
       message:
         error instanceof Error ? error.message : "Failed to unfollow user",
+    };
+  }
+};
+
+export const getFollowing = async (): Promise<{
+  success: boolean;
+  data?: AccountType[];
+  message?: string;
+}> => {
+  try {
+    const apiClient = createApiClient();
+    const response = await fetch(ENDPOINTS.USERS.GET_FOLLOWING, {
+      headers: apiClient.headers,
+    });
+
+    const data = await handleApiResponse(response);
+
+    return {
+      success: true,
+      data: data.result,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch following users",
     };
   }
 };

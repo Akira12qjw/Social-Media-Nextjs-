@@ -1,15 +1,25 @@
 "use client";
-import { signIn } from "next-auth/react";
-import React from "react";
+import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import React, { useEffect } from "react";
 
 export default function ButtonGoogle() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const access_token = searchParams.get("access_token") || "";
+    const refresh_token = searchParams.get("refresh_token") || "";
+
+    if (access_token && refresh_token) {
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("refresh_token", refresh_token);
+      router.push("/");
+    }
+  }, [searchParams, router]);
+
   return (
-    <button
-      onClick={() => {
-        signIn("google", { callbackUrl: "/home" });
-      }}
-      className="flex items-center justify-center font-bold rounded-full bg-white px-4 py-2 text-base h-16 w-full text-gray-900 shadow-sm border border-slate-300 hover:bg-gray-50"
-    >
+    <button className="flex items-center justify-center font-bold rounded-full bg-white px-4 py-2 text-base h-16 w-full text-gray-900 shadow-sm border border-slate-300 hover:bg-gray-50">
       <div className="flex items-center">
         <svg
           version="1.1"

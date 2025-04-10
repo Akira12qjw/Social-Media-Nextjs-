@@ -8,23 +8,48 @@ import React, { useEffect, useState } from "react";
 import ModalProfile from "./modalProfile";
 import Trending from "../../home/_components/Trending";
 import SuggestFollow from "../../home/_components/suggestFollow";
-import { getProfile } from "@/services/profile.service";
+import {
+  followUser,
+  unfollowUser,
+  getFollowing,
+  getProfileUser,
+} from "@/services/profile.service";
 import { toast } from "sonner";
+import { useParams } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
-export default function MyProfile() {
+export default function ProfileDetailOther() {
   const [profile, setProfile] = useState<AccountType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const params = useParams();
+  const { nameUser } = params as { nameUser: string };
+  const { session } = useAuth();
+  const currentUserId = session?.user?.email?.split("@")[0];
+  const isOwnProfile = currentUserId === nameUser;
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProfileAndFollowStatus = async () => {
       try {
         setIsLoading(true);
-        const response = await getProfile();
-        if (response.success && response.data) {
-          setProfile(response.data);
+        const [profileResponse, followingResponse] = await Promise.all([
+          getProfileUser(nameUser),
+          getFollowing(),
+        ]);
+
+        if (profileResponse.success && profileResponse.data) {
+          setProfile(profileResponse.data);
+
+          // Check if we're following this profile
+          if (followingResponse.success && followingResponse.data) {
+            const isFollowingUser = followingResponse.data.some(
+              (user) => user._id === profileResponse.data?._id
+            );
+            setIsFollowing(isFollowingUser);
+          }
         } else {
-          toast.error(response.message);
+          toast.error(profileResponse.message);
         }
       } catch (error) {
         toast.error(
@@ -35,8 +60,28 @@ export default function MyProfile() {
       }
     };
 
-    fetchData();
-  }, []);
+    fetchProfileAndFollowStatus();
+  }, [nameUser]);
+
+  const handleFollowClick = async () => {
+    if (!profile?._id) return;
+
+    try {
+      const response = await (isFollowing ? unfollowUser : followUser)(
+        profile._id
+      );
+      if (response.success) {
+        setIsFollowing(!isFollowing);
+        toast.success(isFollowing ? "Đã bỏ theo dõi" : "Đã theo dõi");
+      } else {
+        toast.error(response.message);
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to follow/unfollow"
+      );
+    }
+  };
 
   if (isLoading) {
     return (
@@ -93,12 +138,25 @@ export default function MyProfile() {
                 className="w-32 h-32 rounded-full border-4 object-cover border-white"
               />
             </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="mt-4 px-4 py-2 rounded-full border border-gray-300 font-semibold hover:bg-gray-200"
-            >
-              Chỉnh sửa hồ sơ
-            </button>
+            {isOwnProfile ? (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="mt-4 px-4 py-2 rounded-full border border-gray-300 font-semibold hover:bg-gray-200"
+              >
+                Chỉnh sửa hồ sơ
+              </button>
+            ) : (
+              <button
+                onClick={handleFollowClick}
+                className={`mt-4 px-4 py-2 rounded-full font-semibold ${
+                  isFollowing
+                    ? "border border-gray-300 hover:bg-gray-200"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
+              >
+                {isFollowing ? "Đang theo dõi" : "Theo dõi"}
+              </button>
+            )}
           </div>
         </div>
         {/* End Image Profile */}

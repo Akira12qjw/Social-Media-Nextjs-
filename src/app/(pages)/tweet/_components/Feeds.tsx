@@ -8,7 +8,10 @@ import { likeTweet } from "@/services/tweet.service";
 import { toast } from "sonner";
 import { formatTimeFromNow } from "@/utils/formatTimeFromNow";
 import { motion } from "framer-motion";
-interface FeedsProps {
+import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
+
+export interface FeedsProps {
   tweetData: TweetType[];
   loading: boolean;
   hasMore: boolean;
@@ -21,6 +24,8 @@ export default function Feeds({
   hasMore,
   onLoadMore,
 }: FeedsProps) {
+  const { session } = useAuth();
+  const currentUserId = session?.user?.email?.split("@")[0];
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
   const [selectedTweet, setSelectedTweet] = useState<TweetType | null>(null);
@@ -154,23 +159,39 @@ export default function Feeds({
         >
           <div className="flex space-x-3">
             <div className="flex-shrink-0">
-              <Image
-                src={
-                  tweet.user.avatar ||
-                  "https://res.cloudinary.com/dwyvtyasp/image/upload/v1734597632/xgkaepsmtzdf25tqtzsi.png"
+              <Link
+                href={
+                  tweet.user.username === currentUserId
+                    ? "/profile"
+                    : `/${tweet.user.username}`
                 }
-                alt="avatar"
-                className="w-14 h-14 rounded-full min-w-14"
-                width={50}
-                height={50}
-                priority={true}
-              />
+              >
+                <Image
+                  src={
+                    tweet.user.avatar ||
+                    "https://res.cloudinary.com/dwyvtyasp/image/upload/v1734597632/xgkaepsmtzdf25tqtzsi.png"
+                  }
+                  alt="avatar"
+                  className="w-14 h-14 rounded-full min-w-14 cursor-pointer"
+                  width={50}
+                  height={50}
+                  priority={true}
+                />
+              </Link>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-1">
                   <span className="font-bold hover:underline cursor-pointer">
-                    {tweet.user?.username}
+                    <Link
+                      href={
+                        tweet.user.username === currentUserId
+                          ? "/profile"
+                          : `/${tweet.user.username}`
+                      }
+                    >
+                      {tweet.user?.username}
+                    </Link>
                   </span>
                   <span className="text-gray-500">
                     @{tweet.user?.email?.split("@")[0]}

@@ -5,19 +5,32 @@ import Trending from "./Trending";
 import Feeds from "../../tweet/_components/Feeds";
 import { useTweet } from "@/context/TweetContext";
 import Post from "../../tweet/_components/button-post";
-import { useState } from "react";
+import { ChangeEvent, KeyboardEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export type TabType = "for-you" | "following";
 
 export default function MainContent() {
   const { tweets, loading, hasMore, loadMoreTweets, setActiveTab } = useTweet();
+  const router = useRouter();
   const [activeTab, setCurrentTab] = useState<TabType>("for-you");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleTabChange = (tab: TabType) => {
     setCurrentTab(tab);
     setActiveTab(tab);
   };
 
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    console.log("searchQuery", searchQuery);
+  };
+
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      router.push(`/explore?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
   return (
     <div className="flex">
       {/* Main feed */}
@@ -78,6 +91,9 @@ export default function MainContent() {
                 type="text"
                 placeholder="Tìm kiếm"
                 className="w-full bg-gray-100 rounded-full py-2 pl-10 pr-4 ring-offset-background focus-visible:ring-sky-500 focus-visible:ring-2 focus-visible:outline-none"
+                value={searchQuery}
+                onChange={handleSearch}
+                onKeyDown={handleKeyPress}
               />
             </div>
           </div>

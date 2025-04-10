@@ -2,6 +2,27 @@ import ButtonGoogle from "@/app/(auth)/Login/button-google";
 
 import ButtonRegister from "@/app/(auth)/Register/button-register";
 import ButtonLogin from "./(auth)/Login/button-login";
+import Link from "next/link";
+
+const getGoogleAuthUrl = () => {
+  const { NEXT_PUBLIC_GOOGLE_CLIENT_ID, NEXT_GOOGLE_AUTHORIZED_REDIRECT_URI } =
+    process.env;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth`;
+  const query = {
+    client_id: NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    redirect_uri: NEXT_GOOGLE_AUTHORIZED_REDIRECT_URI,
+    response_type: "code",
+    scope: [
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ].join(" "),
+    prompt: "consent",
+    access_type: "offline",
+  };
+  const queryString = new URLSearchParams(query).toString();
+  return `${url}?${queryString}`;
+};
+const googleOAuthUrl = getGoogleAuthUrl();
 
 export default function Home() {
   return (
@@ -28,7 +49,9 @@ export default function Home() {
               <span>Tham gia ngay.</span>
             </div>
             <div>
-              <ButtonGoogle />
+              <Link href={googleOAuthUrl}>
+                <ButtonGoogle />
+              </Link>
 
               <div className="flex items-center w-full">
                 <div className="h-[1px] w-full bg-slate-400"></div>

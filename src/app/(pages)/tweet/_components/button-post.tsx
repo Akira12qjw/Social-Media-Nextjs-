@@ -28,22 +28,6 @@ export default function Post({ onPostSuccess }: PostProps) {
     );
   }, [content]);
 
-  // Function to highlight hashtags in content
-  const renderContent = useMemo(() => {
-    if (!content) return "";
-    const parts = content.split(/(#[\p{L}\d]+)/gu);
-    return parts.map((part, index) => {
-      if (part.startsWith("#")) {
-        return (
-          <span key={index} className="text-blue-500">
-            {part}
-          </span>
-        );
-      }
-      return part;
-    });
-  }, [content]);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (mediaFiles.length + files.length > 4) {
@@ -205,19 +189,24 @@ export default function Post({ onPostSuccess }: PostProps) {
         </div>
         <div className="flex-grow">
           <div className="relative">
-            <div
-              className="border-0 text-xl focus-visible:ring-0 px-0 py-[2px] min-h-[40px] outline-none"
-              contentEditable
-              onInput={(e) => setContent(e.currentTarget.textContent || "")}
-              data-placeholder="Chuyện gì đang xảy ra ?!"
-              dangerouslySetInnerHTML={{ __html: renderContent }}
+            <textarea
+              className="w-full border-0 text-xl focus-visible:ring-0 px-0 py-[2px] min-h-[40px] outline-none resize-none overflow-hidden"
+              placeholder="Chuyện gì đang xảy ra ?!"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={1}
+              style={{
+                height: "auto",
+                minHeight: "40px",
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = "auto";
+                target.style.height = target.scrollHeight + "px";
+              }}
             />
-            {!content && (
-              <span className="absolute top-0 left-0 text-gray-500 text-xl pointer-events-none">
-                Chuyện gì đang xảy ra ?!
-              </span>
-            )}
           </div>
+
           {hashtags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {hashtags.map((tag, index) => (

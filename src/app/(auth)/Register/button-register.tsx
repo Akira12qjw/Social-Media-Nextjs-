@@ -91,6 +91,35 @@ export default function ButtonRegister() {
     setError("");
   }, [form]);
 
+  const verifyEmail = async (email_verify_token: string) => {
+    try {
+      const response = await fetch("http://localhost:4000/users/verify-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email_verify_token }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Email verification failed");
+      }
+
+      // Store tokens in localStorage
+      localStorage.setItem("access_token", data.result.access_token);
+      localStorage.setItem("refresh_token", data.result.refresh_token);
+
+      toast.success("Email verified successfully!");
+      return data;
+    } catch (error) {
+      console.error("Email verification error:", error);
+      toast.error("Email verification failed");
+      throw error;
+    }
+  };
+
   const onSubmit = useCallback(
     async (data: FormData) => {
       console.log("Form submitted with data:", data);
@@ -149,8 +178,16 @@ export default function ButtonRegister() {
           return;
         }
 
+        // Extract email_verify_token from response
+        const { email_verify_token } = responseData;
+
+        if (email_verify_token) {
+          // Automatically verify email
+          await verifyEmail(email_verify_token);
+        }
+
         handleClose();
-        toast.success("Đăng ký thành công. Vui lòng đăng nhập !");
+        toast.success("Đăng ký thành công!");
       } catch (error) {
         console.error("Registration error:", error);
         setError(error instanceof Error ? error.message : "Đã xảy ra lỗi");
