@@ -12,7 +12,7 @@ export default function AvatarProfile() {
       try {
         const response = await getProfile();
         if (response.success) {
-          setAvatarUrl(response.data.avatar || null);
+          setAvatarUrl(response.data?.avatar ?? null);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
