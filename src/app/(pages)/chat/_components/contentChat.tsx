@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { ENDPOINTS } from "@/constants/config";
-import socket from "@/socket";
+import { getSocket } from "@/socket";
 import { useEffect, useState, useCallback } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "sonner";
@@ -45,13 +45,16 @@ export default function ContentChat({ receiver }: ContentChatProps) {
   const [sending, setSending] = useState(false);
   const [value, setValue] = useState("");
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const [pagination, setPagination] = useState({
     page: PAGE,
     total_page: 0,
   });
 
   useEffect(() => {
-    const storedProfile = localStorage.getItem("profile");
+    setIsClient(true);
+    const storedProfile =
+      typeof window !== "undefined" ? localStorage.getItem("profile") : null;
     if (storedProfile) {
       setProfile(JSON.parse(storedProfile));
     }
@@ -59,17 +62,18 @@ export default function ContentChat({ receiver }: ContentChatProps) {
 
   const fetchConversations = useCallback(
     async (page = PAGE) => {
-      if (!receiver?._id || !profile?._id) return;
+      if (!receiver?._id || !profile?._id || !isClient) return;
 
       try {
         setLoading(true);
+        const accessToken = localStorage.getItem("accessToken");
         const response = await fetch(
           `${ENDPOINTS.CONVERSATIONS.GET_MESSAGES(
             receiver._id
           )}?limit=${LIMIT}&page=${page}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           }
         );
@@ -103,7 +107,7 @@ export default function ContentChat({ receiver }: ContentChatProps) {
         setLoading(false);
       }
     },
-    [receiver?._id, profile?._id]
+    [receiver?._id, profile?._id, isClient]
   );
 
   const send = useCallback(
@@ -134,9 +138,15 @@ export default function ContentChat({ receiver }: ContentChatProps) {
 
         setConversations((prev) => [tempMessage, ...prev]);
 
-        socket.emit("send_message", {
-          payload: conversation,
-        } as SendMessageEvent);
+        try {
+          getSocket().emit("send_message", {
+            payload: conversation,
+          } as SendMessageEvent);
+        } catch (socketError) {
+          console.error('Socket error:', socketError);
+          toast.error("Connection error. Please try again.");
+          throw socketError;
+        }
 
         setValue("");
       } catch (error) {
@@ -159,50 +169,57 @@ export default function ContentChat({ receiver }: ContentChatProps) {
   }, [receiver?._id, fetchConversations]);
 
   useEffect(() => {
-    const handleReceiveMessage = (data: { payload: Conversation }) => {
-      const { payload } = data;
-      // Kiểm tra xem tin nhắn có thuộc về cuộc trò chuyện hiện tại không
-      if (
-        payload &&
-        receiver?._id &&
-        profile?._id &&
-        ((payload.sender_id === receiver._id &&
-          payload.receiver_id === profile._id) ||
-          (payload.sender_id === profile._id &&
-            payload.receiver_id === receiver._id))
-      ) {
-        setConversations((prev) => {
-          // Kiểm tra xem tin nhắn đã tồn tại chưa
-          const existingMessage = prev.find((msg) => msg._id === payload._id);
-          if (existingMessage) {
-            return prev;
-          }
+    try {
+      const socket = getSocket();
+      
+      const handleReceiveMessage = (data: { payload: Conversation }) => {
+        const { payload } = data;
+        // Kiểm tra xem tin nhắn có thuộc về cuộc trò chuyện hiện tại không
+        if (
+          payload &&
+          receiver?._id &&
+          profile?._id &&
+          ((payload.sender_id === receiver._id &&
+            payload.receiver_id === profile._id) ||
+            (payload.sender_id === profile._id &&
+              payload.receiver_id === receiver._id))
+        ) {
+          setConversations((prev) => {
+            // Kiểm tra xem tin nhắn đã tồn tại chưa
+            const existingMessage = prev.find((msg) => msg._id === payload._id);
+            if (existingMessage) {
+              return prev;
+            }
 
-          // Nếu là tin nhắn tạm thời (đang gửi), thay thế bằng tin nhắn thật
-          const tempMessageIndex = prev.findIndex(
-            (msg) =>
-              msg.content === payload.content &&
-              msg.sender_id === payload.sender_id &&
-              msg._id.toString().length > 10
-          );
+            // Nếu là tin nhắn tạm thời (đang gửi), thay thế bằng tin nhắn thật
+            const tempMessageIndex = prev.findIndex(
+              (msg) =>
+                msg.content === payload.content &&
+                msg.sender_id === payload.sender_id &&
+                msg._id.toString().length > 10
+            );
 
-          if (tempMessageIndex !== -1) {
-            const newConversations = [...prev];
-            newConversations[tempMessageIndex] = payload;
-            return newConversations;
-          }
+            if (tempMessageIndex !== -1) {
+              const newConversations = [...prev];
+              newConversations[tempMessageIndex] = payload;
+              return newConversations;
+            }
 
-          // Thêm tin nhắn mới vào đầu danh sách
-          return [payload, ...prev];
-        });
-      }
-    };
+            // Thêm tin nhắn mới vào đầu danh sách
+            return [payload, ...prev];
+          });
+        }
+      };
 
-    socket.on("receive_message", handleReceiveMessage);
+      socket.on("receive_message", handleReceiveMessage);
 
-    return () => {
-      socket.off("receive_message", handleReceiveMessage);
-    };
+      return () => {
+        socket.off("receive_message", handleReceiveMessage);
+      };
+    } catch (error) {
+      console.error('Socket initialization error:', error);
+      // Don't show toast here as this runs during SSR
+    }
   }, [receiver?._id, profile?._id]);
 
   const loadMore = () => {
@@ -210,6 +227,10 @@ export default function ContentChat({ receiver }: ContentChatProps) {
       fetchConversations(pagination.page + 1);
     }
   };
+
+  if (!isClient) {
+    return <div className="flex-1 w-[700px]" />;
+  }
 
   if (!receiver) {
     return (

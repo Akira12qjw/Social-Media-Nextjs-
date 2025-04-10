@@ -1,8 +1,8 @@
 import ButtonGoogle from "@/app/(auth)/Login/button-google";
-
 import ButtonRegister from "@/app/(auth)/Register/button-register";
 import ButtonLogin from "./(auth)/Login/button-login";
 import Link from "next/link";
+import { Suspense } from "react";
 
 const getGoogleAuthUrl = () => {
   const { NEXT_PUBLIC_GOOGLE_CLIENT_ID, NEXT_GOOGLE_AUTHORIZED_REDIRECT_URI } =
@@ -19,7 +19,14 @@ const getGoogleAuthUrl = () => {
     prompt: "consent",
     access_type: "offline",
   };
-  const queryString = new URLSearchParams(query).toString();
+  const queryString = new URLSearchParams(
+    Object.entries(query).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, string>)
+  ).toString();
   return `${url}?${queryString}`;
 };
 const googleOAuthUrl = getGoogleAuthUrl();
@@ -50,7 +57,9 @@ export default function Home() {
             </div>
             <div>
               <Link href={googleOAuthUrl}>
-                <ButtonGoogle />
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ButtonGoogle />
+                </Suspense>
               </Link>
 
               <div className="flex items-center w-full">
